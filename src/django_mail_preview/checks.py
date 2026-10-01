@@ -165,7 +165,9 @@ def check_unknown_settings(
 def check_urls(
     app_configs: Sequence[AppConfig] | None, **kwargs: Any
 ) -> list[CheckMessage]:
-    if not backend_is_active():
+    # Without a URLconf, as in a script or worker set up with
+    # settings.configure(), there are no pages to include.
+    if not backend_is_active() or not getattr(settings, "ROOT_URLCONF", None):
         return []
     try:
         reverse("mail_preview:index")

@@ -234,3 +234,12 @@ def test_no_urls_without_backend_is_fine(config):
         result = run_checks()
 
     assert result == []
+
+
+@pytest.mark.parametrize("config", ACTIVE)
+def test_no_urlconf_is_fine(config):
+    """A script set up with settings.configure() has no pages to include."""
+    with override_settings(ROOT_URLCONF=None, **config):
+        result = run_checks()
+
+    assert result == []
