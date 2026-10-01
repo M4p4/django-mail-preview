@@ -37,6 +37,8 @@ jobs:
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
     - name: Run pre-commit
       run: uvx --with pre-commit-uv pre-commit run --all-files --show-diff-on-failure
+    - name: Run tests
+      run: uv run pytest
 
   build:
     name: Build
