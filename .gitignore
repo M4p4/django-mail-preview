@@ -1,0 +1,19 @@
+*.egg-info/
+*.pyc
+.coverage
+.coverage.*
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
+.venv/
+__pycache__/
+build/
+dist/
+docs/_build/
+
+# Local notes, never committed
+BUILDPLAN.md
+CLAUDE.local.md
+CLAUDE.md
+SPECS.md
