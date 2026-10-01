@@ -40,7 +40,10 @@ def backend_is_active() -> bool:
         )
     # Django 6.1 deprecates EMAIL_BACKEND and warns on each read from outside Django,
     # so it's read only when the project sets it. The default is the SMTP backend.
-    return settings.is_overridden("EMAIL_BACKEND") and settings.EMAIL_BACKEND == BACKEND
+    if not settings.is_overridden("EMAIL_BACKEND"):
+        return False
+    backend: str = settings.EMAIL_BACKEND
+    return backend == BACKEND
 
 
 def check_allow(

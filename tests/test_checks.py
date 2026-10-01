@@ -103,7 +103,9 @@ def test_max_messages_invalid(value):
     assert repr(value) in result[0].msg
 
 
-@pytest.mark.parametrize("root", ["/var/tmp/mail-preview", Path("/var/tmp/mail-preview")])
+@pytest.mark.parametrize(
+    "root", ["/var/tmp/mail-preview", Path("/var/tmp/mail-preview")]
+)
 def test_root_valid(root):
     with override_settings(MAIL_PREVIEW_ROOT=root):
         result = run_checks()
@@ -149,7 +151,7 @@ def test_debug_off_without_backend_is_fine(config):
 @pytest.mark.parametrize(
     ("name", "hint"),
     [
-        ("MAIL_PREVIEW_MAX_MESAGES", "Did you mean MAIL_PREVIEW_MAX_MESSAGES?"),
+        ("MAIL_PREVIEW_MAX_MESSAGE", "Did you mean MAIL_PREVIEW_MAX_MESSAGES?"),
         ("MAIL_PREVIEW_ALLOWED", "Did you mean MAIL_PREVIEW_ALLOW?"),
         ("MAIL_PREVIEW_POLL_INTERVAL", "Remove it."),
     ],
