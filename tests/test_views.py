@@ -10,11 +10,11 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.test import Client
 from django.urls import reverse
 
-from django_mail_preview import views
+from django_mail_preview import EmailPreview, views
 from django_mail_preview.backends import EmailBackend
 from django_mail_preview.checks import BACKEND
 from django_mail_preview.storage import FileStorage
-from tests.helpers import PNG, inline_image
+from tests.helpers import LATE_PREVIEWS, PNG, inline_image
 
 FRAME_CSP = (
     "default-src 'none'; img-src data: http: https:; "
@@ -29,6 +29,8 @@ HTML = (
 SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
 UNKNOWN_ID = "20261001-120000-123456-0badcafe"
 KEY = "open-sesame"
+SAMPLE = {"group": "tests", "name": "html"}
+"""The sample preview with an inline image and an attachment, from ``tests/previews.py``."""
 
 csp_middleware = pytest.mark.skipif(
     django.VERSION < (6, 0), reason="Django 6.0 added the CSP middleware"
@@ -43,10 +45,23 @@ ROUTES = {
     "sent_eml": lambda id: route("sent_eml", id=id),
     "sent_delete": lambda id: route("sent_delete", id=id),
     "sent_clear": lambda id: route("sent_clear"),
+    "preview": lambda id: route("preview", **SAMPLE),
+    "preview_html": lambda id: route("preview_html", **SAMPLE),
+    "preview_part": lambda id: route("preview_part", n=0, **SAMPLE),
+    "preview_eml": lambda id: route("preview_eml", **SAMPLE),
     "asset": lambda id: route("asset", name="preview.css"),
 }
 
 BY_ID = [("sent", {}), ("sent_html", {}), ("sent_part", {"n": 0}), ("sent_eml", {})]
+
+BY_PREVIEW = [
+    ("preview", {}),
+    ("preview_html", {}),
+    ("preview_part", {"n": 0}),
+    ("preview_eml", {}),
+]
+
+kinds = pytest.mark.parametrize("kind", ["sent", "preview"])
 
 
 def allow_with_key(request):
@@ -83,6 +98,21 @@ def capture(message):
     """Send one message through the capture backend and return its id."""
     EmailBackend().send_messages([message])
     return FileStorage().list()[0].meta.id
+
+
+def urls(kind):
+    """The page, frame, first-part and ``.eml`` URLs of an HTML message of either kind.
+
+    A captured message, or the ``tests.html`` sample preview; part 0 of both is
+    the inline PNG.
+    """
+    kwargs = {"id": capture(html())} if kind == "sent" else SAMPLE
+    return {
+        "page": route(kind, **kwargs),
+        "html": route(f"{kind}_html", **kwargs),
+        "part": route(f"{kind}_part", n=0, **kwargs),
+        "eml": route(f"{kind}_eml", **kwargs),
+    }
 
 
 def current_tab(response):
@@ -208,10 +238,9 @@ def test_tab_links_keep_the_other_query_parameters(client):
     assert 'href="?lang=de&amp;tab=source"' in response.content.decode()
 
 
-def test_frame_serves_the_prepared_html_under_its_own_policy(client):
-    id = capture(html())
-
-    response = client.get(route("sent_html", id=id))
+@kinds
+def test_frame_serves_the_prepared_html_under_its_own_policy(client, kind):
+    response = client.get(urls(kind)["html"])
 
     content = response.content.decode()
     assert response.status_code == 200
@@ -219,21 +248,30 @@ def test_frame_serves_the_prepared_html_under_its_own_policy(client):
     assert response["Content-Security-Policy"] == FRAME_CSP
     assert response["X-Frame-Options"] == "SAMEORIGIN"
     assert response["Referrer-Policy"] == "no-referrer"
-    assert content.startswith('<html><head><base target="_blank"></head>')
+    assert '<base target="_blank">' in content
     assert f'<img src="data:image/png;base64,{b64encode(PNG).decode()}"' in content
 
 
-def test_frame_embeds_inline_parts_so_it_makes_no_gated_request(settings, client):
-    """The sandboxed frame has an opaque origin and sends no cookie, so a cookie-based gate would 404 its part requests."""
-    settings.MAIL_PREVIEW_ALLOW = "tests.test_views.allow_with_key"
+def test_frame_injects_the_base_into_the_head(client):
     id = capture(html())
 
-    response = client.get(route("sent_html", id=id), headers={"X-Key": KEY})
+    response = client.get(route("sent_html", id=id))
+
+    assert response.content.startswith(b'<html><head><base target="_blank"></head>')
+
+
+@kinds
+def test_frame_embeds_inline_parts_so_it_makes_no_gated_request(settings, client, kind):
+    """The sandboxed frame has an opaque origin and sends no cookie, so a cookie-based gate would 404 its part requests."""
+    pages = urls(kind)
+    settings.MAIL_PREVIEW_ALLOW = "tests.test_views.allow_with_key"
+
+    response = client.get(pages["html"], headers={"X-Key": KEY})
 
     content = response.content.decode()
     assert response.status_code == 200
     assert "data:image/png;base64," in content
-    assert route("sent_part", id=id, n=0) not in content
+    assert pages["part"] not in content
 
 
 def test_frame_leaves_an_unknown_cid_alone(client):
@@ -455,17 +493,18 @@ def test_other_assets_are_404(client, path):
     assert response.status_code == 404
 
 
+@kinds
 def test_pages_render_without_a_project_template_engine_or_frame_exemption(
-    settings, client
+    settings, client, kind
 ):
     assert settings.TEMPLATES == []
     assert (
         "django.middleware.clickjacking.XFrameOptionsMiddleware" in settings.MIDDLEWARE
     )
-    id = capture(html())
+    pages = urls(kind)
 
-    page = client.get(route("sent", id=id))
-    frame = client.get(route("sent_html", id=id))
+    page = client.get(pages["page"])
+    frame = client.get(pages["html"])
 
     assert page.status_code == 200
     assert page["X-Frame-Options"] == "DENY"
@@ -473,19 +512,20 @@ def test_pages_render_without_a_project_template_engine_or_frame_exemption(
 
 
 @csp_middleware
-def test_own_policies_survive_the_csp_middleware(settings, client):
+@kinds
+def test_own_policies_survive_the_csp_middleware(settings, client, kind):
     settings.MIDDLEWARE = [
         *settings.MIDDLEWARE,
         "django.middleware.csp.ContentSecurityPolicyMiddleware",
     ]
     settings.SECURE_CSP = {"default-src": ["'self'"]}
     settings.SECURE_CSP_REPORT_ONLY = {"default-src": ["'self'"], "report-uri": "/csp/"}
-    id = capture(html())
+    pages = urls(kind)
 
-    page = client.get(route("sent", id=id))
-    frame = client.get(route("sent_html", id=id))
-    part = client.get(route("sent_part", id=id, n=0))
-    eml = client.get(route("sent_eml", id=id))
+    page = client.get(pages["page"])
+    frame = client.get(pages["html"])
+    part = client.get(pages["part"])
+    eml = client.get(pages["eml"])
 
     assert page["Content-Security-Policy"] == "default-src 'self'"
     assert (
@@ -497,3 +537,244 @@ def test_own_policies_survive_the_csp_middleware(settings, client):
     assert eml["Content-Security-Policy"] == DOWNLOAD_CSP
     for response in (frame, part, eml):
         assert "Content-Security-Policy-Report-Only" not in response
+
+
+@pytest.mark.parametrize(
+    ("name", "subject", "tab"),
+    [
+        ("plain", "Welcome", "text"),
+        ("html", "Welcome", "html"),
+        ("greeting", "Hello Ada", "text"),
+    ],
+)
+def test_preview_page(client, name, subject, tab):
+    response = client.get(route("preview", group="tests", name=name))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert f"<title>{subject} · Mail preview</title>" in content
+    assert "noreply@example.com" in content
+    assert "ada@example.com" in content
+    assert f"<code>tests.{name}</code>" in content
+    assert route("preview_eml", group="tests", name=name) in content
+    assert current_tab(response) == tab
+    # The open preview in the sidebar, and the current tab; no Date, no Delete.
+    assert content.count('aria-current="page"') == 2
+    assert "<dt>Date</dt>" not in content
+    assert 'data-confirm="Delete this message?"' not in content
+
+
+def test_preview_page_lists_the_parts(client):
+    response = client.get(route("preview", **SAMPLE))
+
+    content = response.content.decode()
+    assert f'<iframe src="{route("preview_html", **SAMPLE)}"' in content
+    assert route("preview_part", n=1, **SAMPLE) in content
+    assert "terms.txt" in content
+    assert route("preview_part", n=0, **SAMPLE) in content
+    assert "part-0" in content
+
+
+@pytest.mark.parametrize(
+    ("name", "description"),
+    [
+        ("html", "A welcome with an inline logo and an attachment."),
+        ("greeting", "Greets in the language of ``?lang=``, English unless given."),
+    ],
+)
+def test_preview_page_shows_the_docstring(client, name, description):
+    response = client.get(route("preview", group="tests", name=name))
+
+    content = response.content.decode()
+    assert "<dt>Description</dt>" in content
+    assert f"<dd>{description}</dd>" in content
+
+
+def test_preview_without_a_docstring_has_no_description_row(client):
+    response = client.get(route("preview", group="tests", name="plain"))
+
+    assert "<dt>Description</dt>" not in response.content.decode()
+
+
+def test_preview_page_shows_bcc(client):
+    class Copies(EmailPreview):
+        group = "copies"
+
+        def blind(self):
+            return EmailMessage(
+                "Hi",
+                "Hi.",
+                "sender@example.com",
+                ["to@example.com"],
+                bcc=["bcc@example.com"],
+            )
+
+    response = client.get(route("preview", group="copies", name="blind"))
+
+    assert "<dd>bcc@example.com</dd>" in response.content.decode()
+
+
+def test_params_reach_the_preview(client):
+    english = client.get(route("preview", group="tests", name="greeting"))
+    german = client.get(route("preview", group="tests", name="greeting") + "?lang=de")
+
+    assert "<title>Hello Ada · Mail preview</title>" in english.content.decode()
+    assert "<title>Hallo Ada · Mail preview</title>" in german.content.decode()
+
+
+def test_params_are_passed_on_to_the_frame_and_the_downloads(client):
+    response = client.get(route("preview", **SAMPLE) + "?lang=de&tab=source")
+
+    content = response.content.decode()
+    assert current_tab(response) == "source"
+    assert (
+        f'<iframe src="{route("preview_html", **SAMPLE)}?lang=de&amp;tab=source"'
+        in content
+    )
+    assert f'href="{route("preview_eml", **SAMPLE)}?lang=de&amp;tab=source"' in content
+    assert (
+        f'href="{route("preview_part", n=1, **SAMPLE)}?lang=de&amp;tab=source"'
+        in content
+    )
+    assert 'href="?lang=de&amp;tab=headers"' in content
+
+
+def test_preview_downloads_are_rendered_with_their_params(client):
+    response = client.get(
+        route("preview_eml", group="tests", name="greeting") + "?lang=de"
+    )
+
+    assert b"Subject: Hallo Ada" in response.content
+
+
+@pytest.mark.parametrize(
+    ("n", "content_type", "disposition", "body"),
+    [
+        (0, "image/png", 'attachment; filename="part-0"', PNG),
+        (1, "text/plain", 'attachment; filename="terms.txt"', b"The terms."),
+    ],
+)
+def test_preview_parts_download(client, n, content_type, disposition, body):
+    response = client.get(route("preview_part", n=n, **SAMPLE))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == content_type
+    assert response["Content-Disposition"] == disposition
+    assert response["X-Content-Type-Options"] == "nosniff"
+    assert response["Content-Security-Policy"] == DOWNLOAD_CSP
+    # Django 6's email API ends a text part with a newline; 5.2's doesn't.
+    assert response.content.rstrip(b"\r\n") == body
+
+
+def test_preview_eml_is_the_rendered_message(client):
+    response = client.get(route("preview_eml", group="tests", name="plain"))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "message/rfc822"
+    assert response["Content-Disposition"] == 'attachment; filename="tests.plain.eml"'
+    assert response["X-Content-Type-Options"] == "nosniff"
+    assert response["Content-Security-Policy"] == DOWNLOAD_CSP
+    assert b"\r\nSubject: Welcome\r\n" in response.content
+    assert b"Hello Ada." in response.content
+
+
+def test_preview_frame_of_a_message_without_html_is_404(client):
+    response = client.get(route("preview_html", group="tests", name="plain"))
+
+    assert response.status_code == 404
+
+
+def test_preview_part_beyond_the_last_is_404(client):
+    response = client.get(route("preview_part", n=2, **SAMPLE))
+
+    assert response.status_code == 404
+
+
+@pytest.mark.parametrize(("name", "kwargs"), BY_PREVIEW)
+@pytest.mark.parametrize(
+    ("group", "method"),
+    [
+        ("nope", "html"),
+        ("tests", "nope"),
+        ("tests", "GREETINGS"),
+        ("tests", "request"),
+        ("tests", "__init__"),
+        ("tests.html", "html"),
+    ],
+)
+def test_unknown_preview_is_404(client, name, kwargs, group, method):
+    response = client.get(route(name, group=group, name=method, **kwargs))
+
+    assert response.status_code == 404
+
+
+def test_previews_are_never_stored(client, mail_preview_root):
+    for name, kwargs in BY_PREVIEW:
+        client.get(route(name, **kwargs, **SAMPLE))
+
+    assert FileStorage().list() == []
+    assert list(mail_preview_root.iterdir()) == []
+
+
+def test_error_in_a_preview_propagates(client):
+    """Nothing is caught, so the debug page points at the preview's own code."""
+
+    class Broken(EmailPreview):
+        group = "broken"
+
+        def boom(self):
+            raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        client.get(route("preview", group="broken", name="boom"))
+
+
+def test_sidebar_lists_previews_by_group(client):
+    """Groups come sorted, each with its previews sorted; the methods are only listed, never called."""
+
+    class Shop(EmailPreview):
+        group = "shop"
+
+        def order(self): ...
+
+    class Accounts(EmailPreview):
+        group = "accounts"
+
+        def welcome(self): ...
+
+    response = client.get(route("index"))
+
+    content = response.content.decode()
+    assert re.findall(r"<h3>(\w+)</h3>", content) == ["accounts", "shop", "tests"]
+    assert (
+        content.index("accounts.welcome")
+        < content.index("shop.order")
+        < content.index("tests.greeting")
+        < content.index("tests.html")
+    )
+    assert route("preview", group="shop", name="order") in content
+    assert "No previews yet." not in content
+
+
+def test_sidebar_without_previews(client, preview_registry):
+    preview_registry.clear()
+
+    response = client.get(route("index"))
+
+    content = response.content.decode()
+    assert "No previews yet." in content
+    assert "<h3>" not in content
+
+
+def test_previews_module_created_after_start_appears_on_the_next_request(
+    client, late_app
+):
+    before = client.get(route("index"))
+    (late_app / "previews.py").write_text(LATE_PREVIEWS)
+    after = client.get(route("index"))
+    page = client.get(route("preview", group="lateapp", name="welcome"))
+
+    assert "lateapp.welcome" not in before.content.decode()
+    assert "lateapp.welcome" in after.content.decode()
+    assert page.status_code == 200
+    assert "<title>Late · Mail preview</title>" in page.content.decode()

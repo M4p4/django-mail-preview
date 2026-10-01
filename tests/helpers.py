@@ -4,6 +4,18 @@ import django
 
 PNG = b"\x89PNG\r\n\x1a\n" + bytes(range(32))
 
+LATE_PREVIEWS = """
+from django.core.mail import EmailMessage
+
+from django_mail_preview import EmailPreview
+
+
+class Late(EmailPreview):
+    def welcome(self):
+        return EmailMessage("Late", "Hello", "noreply@example.com", ["ada@example.com"])
+"""
+"""A ``previews.py`` for the ``late_app`` fixture."""
+
 
 def inline_image(cid):
     """An inline PNG with a Content-ID, built the way each Django version documents it."""

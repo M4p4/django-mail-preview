@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from email.generator import BytesGenerator
-from email.message import Message
 from io import BytesIO
 from typing import Any
 
@@ -14,7 +13,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 from django_mail_preview.storage import MessageMeta, get_storage, new_id
 
-__all__ = ["EmailBackend"]
+__all__ = ["EmailBackend", "serialise"]
 
 
 class EmailBackend(BaseEmailBackend):
@@ -34,10 +33,7 @@ class EmailBackend(BaseEmailBackend):
         storage = get_storage()
         count = 0
         for message in email_messages:
-            # Called once: it validates the headers, and every call mints a new
-            # Message-ID.
-            mime = message.message()
-            raw = _serialise(mime)
+            raw = serialise(message)
             captured = datetime.now(timezone.utc)
             meta = MessageMeta(
                 id=new_id(captured),
@@ -58,12 +54,15 @@ class EmailBackend(BaseEmailBackend):
         return count
 
 
-def _serialise(mime: Message) -> bytes:
-    """The message as bytes with CRLF line endings, so the stored ``.eml`` is RFC 5322.
+def serialise(message: EmailMessage) -> bytes:
+    """A message as the bytes a mail server would get, with CRLF line endings as RFC 5322 wants.
 
-    The message's own policy is kept: ``compat32`` on Django 5.2 and
-    ``email.policy.default`` on 6.x produce the same 8-bit UTF-8 bodies.
+    ``message()`` is called once: it validates the headers, and every call
+    mints a new ``Message-ID``. The MIME message's own policy is kept:
+    ``compat32`` on Django 5.2 and ``email.policy.default`` on 6.x produce the
+    same 8-bit UTF-8 bodies.
     """
+    mime = message.message()
     buffer = BytesIO()
     policy = mime.policy.clone(linesep="\r\n")
     BytesGenerator(buffer, mangle_from_=False, policy=policy).flatten(mime)

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import sys
+
 import django.test
 import pytest
+from django.apps import apps
+from django.test import override_settings
 
 from django_mail_preview.registry import autodiscover, registry
 
@@ -45,3 +49,20 @@ def client():
     yield Client()
     for response in responses:
         response.close()
+
+
+@pytest.fixture
+def late_app(tmp_path):
+    """An installed app ``lateapp`` that has no ``previews`` module yet."""
+    package = tmp_path / "lateapp"
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    sys.path.insert(0, str(tmp_path))
+    try:
+        installed = [config.name for config in apps.get_app_configs()]
+        with override_settings(INSTALLED_APPS=[*installed, "lateapp"]):
+            yield package
+    finally:
+        sys.path.remove(str(tmp_path))
+        for name in [name for name in sys.modules if name.split(".")[0] == "lateapp"]:
+            del sys.modules[name]
