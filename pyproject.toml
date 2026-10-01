@@ -78,10 +78,87 @@ conflicts = [
   ],
 ]
 
+[tool.ruff]
+lint.select = [
+  # flake8-bugbear
+  "B",
+  # flake8-comprehensions
+  "C4",
+  # pycodestyle
+  "E",
+  # Pyflakes errors
+  "F",
+  # isort
+  "I",
+  # flake8-simplify
+  "SIM",
+  # flake8-tidy-imports
+  "TID",
+  # pyupgrade
+  "UP",
+  # Pyflakes warnings
+  "W",
+]
+lint.ignore = [
+  # flake8-bugbear opinionated rules
+  "B9",
+  # line-too-long
+  "E501",
+  # suppressible-exception
+  "SIM105",
+  # if-else-block-instead-of-if-exp
+  "SIM108",
+]
+lint.extend-safe-fixes = [
+  # non-pep585-annotation
+  "UP006",
+]
+lint.isort.required-imports = [ "from __future__ import annotations" ]
+
+[tool.pyproject-fmt]
+max_supported_python = "3.14"
+
+[tool.mypy]
+mypy_path = "src/"
+namespace_packages = false
+warn_unreachable = true
+enable_error_code = [
+  "ignore-without-code",
+  "redundant-expr",
+  "truthy-bool",
+]
+strict = true
+overrides = [
+  { module = "tests.*", allow_untyped_calls = true, allow_untyped_defs = true },
+]
+
 [tool.pytest]
 ini_options.testpaths = [ "tests" ]
 ini_options.pythonpath = [ "." ]
 ini_options.addopts = "-ra --strict-config --strict-markers"
-ini_options.django_find_project = false
 ini_options.django_debug_mode = "keep"
+ini_options.django_find_project = false
 ini_options.DJANGO_SETTINGS_MODULE = "tests.settings"
+
+[tool.coverage]
+run.source = [
+  "django_mail_preview",
+  "tests",
+]
+run.branch = true
+run.data_file = ".coverage/cov"
+run.parallel = true
+paths.source = [
+  "src",
+  ".tox/**/site-packages",
+]
+report.fail_under = 100
+report.exclude_also = [
+  # Abstract methods carry no body worth covering.
+  "@(abc\\.)?abstractmethod",
+  # Import-only blocks for type checkers.
+  "if TYPE_CHECKING:",
+]
+report.skip_covered = true
+report.skip_empty = true
+report.show_missing = true

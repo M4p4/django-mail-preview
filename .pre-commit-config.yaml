@@ -1,0 +1,62 @@
+ci:
+  autoupdate_schedule: monthly
+
+default_language_version:
+  python: python3.14
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+  hooks:
+  - id: check-added-large-files
+    args: [ --maxkb=8192 ]
+  - id: check-case-conflict
+  - id: check-json
+  - id: check-merge-conflict
+  - id: check-symlinks
+  - id: check-toml
+  - id: end-of-file-fixer
+    # A final newline in a template would add a blank line to the rendered file.
+    exclude: ^src/django_mail_preview/templates/
+  - id: trailing-whitespace
+- repo: https://github.com/crate-ci/typos
+  rev: 00f422f3b19c57bc6338715ebfe3316d38768461  # frozen: v1.50.3
+  hooks:
+  - id: typos
+- repo: https://github.com/tox-dev/pyproject-fmt
+  rev: 59e7b26529dc6f15c43063064b8b06ded60d0910  # frozen: v2.29.4
+  hooks:
+  - id: pyproject-fmt
+- repo: https://github.com/tox-dev/tox-ini-fmt
+  rev: 241ced4140307006cfd8b2b9ccfd43b1139cfe4a  # frozen: 1.9.0
+  hooks:
+  - id: tox-ini-fmt
+- repo: https://github.com/adamchainz/django-upgrade
+  rev: e668ea858b908d23a9702b24214f4fc5d07ed50f  # frozen: 1.32.0
+  hooks:
+  - id: django-upgrade
+    args: [ --target-version, "5.2" ]
+- repo: https://github.com/adamchainz/blacken-docs
+  rev: dda8db18cfc68df532abf33b185ecd12d5b7b326  # frozen: 1.20.0
+  hooks:
+  - id: blacken-docs
+    additional_dependencies:
+    - black==26.5.1
+- repo: https://github.com/adamchainz/djade-pre-commit
+  rev: 52a7ce253113456c2a1113186a4a19b15c8b68af  # frozen: 1.9.0
+  hooks:
+  - id: djade
+    args: [ --target-version, "5.2" ]
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: a56c0b927e6465d37cae3e97d35d4d18ab2b96cd  # frozen: v0.16.9
+  hooks:
+  - id: ruff-check
+    args: [ --fix ]
+  - id: ruff-format
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: 7ff8d35ae36a7d2b968f2f90b4c723e292e594ee  # frozen: v2.3.1
+  hooks:
+  - id: mypy
+    additional_dependencies:
+    - django-stubs==6.1.1
+    - pytest

@@ -4,9 +4,9 @@ SECRET_KEY = "django-mail-preview-tests"
 
 DEBUG = True
 
-DATABASES = {}
+DATABASES: dict[str, dict[str, object]] = {}
 
-TEMPLATES = []
+TEMPLATES: list[dict[str, object]] = []
 
 INSTALLED_APPS = ["django_mail_preview", "tests"]
 
