@@ -3,13 +3,12 @@ from __future__ import annotations
 from email.generator import BytesGenerator
 from io import BytesIO
 
-import django
 import pytest
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from django_mail_preview.message import BASE, Part, parse, prepare_html
+from tests.helpers import PNG, inline_image
 
-PNG = b"\x89PNG\r\n\x1a\n" + bytes(range(32))
 PDF = b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n"
 ICS = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n"
 HTML = "<p>Hello <b>world</b></p>"
@@ -26,24 +25,6 @@ def serialise(message):
     )
     generator.flatten(mime)
     return buffer.getvalue()
-
-
-def inline_image(cid):
-    """An inline PNG with a Content-ID, built the way each Django version documents it."""
-    if django.VERSION >= (6, 0):
-        from email.message import MIMEPart
-
-        part = MIMEPart()
-        part.set_content(
-            PNG, maintype="image", subtype="png", disposition="inline", cid=f"<{cid}>"
-        )
-        return part
-    from email.mime.image import MIMEImage
-
-    image = MIMEImage(PNG, "png")
-    image.add_header("Content-ID", f"<{cid}>")
-    image.add_header("Content-Disposition", "inline")
-    return image
 
 
 def lines(body: str | None) -> list[str] | None:
