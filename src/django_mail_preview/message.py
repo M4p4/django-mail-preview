@@ -92,9 +92,9 @@ def prepare_html(html: str, part_url: Callable[[str], str | None]) -> str:
     """Prepare an HTML body for the frame it is served into.
 
     ``cid:`` references in attribute values and CSS ``url()`` are replaced with
-    the URL ``part_url`` returns for the id, which must be absolute so the
-    email's own ``<base href>`` can't redirect them; unknown ids stay as they
-    are. ``<base target="_blank">`` is injected right after ``<head>``, or at the
+    the URL ``part_url`` returns for the id, which must be absolute (a ``data:``
+    URI is) so the email's own ``<base href>`` can't redirect them; unknown ids
+    stay as they are. ``<base target="_blank">`` is injected right after ``<head>``, or at the
     top when there is none, so links open in a new tab instead of navigating the
     frame.
     """

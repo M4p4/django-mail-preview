@@ -8,6 +8,7 @@ backend works too.
 
 from __future__ import annotations
 
+import base64
 import functools
 from collections.abc import Callable
 from pathlib import Path
@@ -71,12 +72,13 @@ FRAME_CSP = (
 )
 """The policy of an email's HTML in its frame.
 
-Images, styles and fonts load from anywhere, as in a mail client; scripts never
-run, not even when the URL is opened directly, because ``sandbox`` applies to
-the navigation too. Schemes rather than ``'self'``, which has had edge cases in
-sandboxed documents, and the package's own part URLs are ``http:`` or
-``https:`` anyway. ``base-uri 'none'`` keeps an email's own ``<base>`` from
-rewriting relative URLs.
+Images, styles and fonts load from anywhere, as in a mail client, and the
+message's own inline parts arrive as ``data:`` URIs (see ``frame``); scripts
+never run, not even when the URL is opened directly, because ``sandbox``
+applies to the navigation too. Schemes rather than ``'self'``, which has had
+edge cases in sandboxed documents and which nothing in the frame needs.
+``base-uri 'none'`` keeps an email's own ``<base>`` from rewriting relative
+URLs.
 """
 
 DOWNLOAD_CSP = "sandbox; default-src 'none'"
@@ -222,24 +224,28 @@ def tab_url(request: HttpRequest, tab: str) -> str:
     return f"?{query.urlencode()}"
 
 
-def frame(
-    request: HttpRequest, parsed: ParsedMessage, part_url: Callable[[int], str]
-) -> HttpResponse:
-    """The HTML part, prepared for the sandboxed frame, under ``FRAME_CSP``."""
+def frame(parsed: ParsedMessage) -> HttpResponse:
+    """The HTML part, prepared for the sandboxed frame, under ``FRAME_CSP``.
+
+    Inline parts are embedded as ``data:`` URIs rather than linked by their
+    part URLs. The sandboxed frame has an opaque origin, so the browser sends no
+    cookie with the requests it makes, and a cookie-based ``MAIL_PREVIEW_ALLOW``
+    (``request.user.is_staff``, say) would answer every one of them with 404.
+    """
     if parsed.html is None:
         raise Http404("The message has no HTML part.")
     by_cid = {
-        part.content_id: part.index
-        for part in parsed.parts
-        if part.content_id is not None
+        part.content_id: part for part in parsed.parts if part.content_id is not None
     }
 
-    def absolute(cid: str) -> str | None:
-        # Absolute, so an email's own <base href> can't redirect it.
-        index = by_cid.get(cid)
-        return None if index is None else request.build_absolute_uri(part_url(index))
+    def data_uri(cid: str) -> str | None:
+        part = by_cid.get(cid)
+        if part is None:
+            return None
+        encoded = base64.b64encode(part.content).decode("ascii")
+        return f"data:{part.content_type};base64,{encoded}"
 
-    response = HttpResponse(prepare_html(parsed.html, absolute))
+    response = HttpResponse(prepare_html(parsed.html, data_uri))
     response["Content-Security-Policy"] = FRAME_CSP
     # Keeps the message URL out of the logs behind tracking pixels.
     response["Referrer-Policy"] = "no-referrer"
@@ -318,7 +324,7 @@ def sent(request: HttpRequest, id: str) -> HttpResponse:
 @without_project_csp
 def sent_html(request: HttpRequest, id: str) -> HttpResponse:
     _, raw = captured(get_storage(), id)
-    return frame(request, parse(raw), lambda n: route("sent_part", id=id, n=n))
+    return frame(parse(raw))
 
 
 @allowed
