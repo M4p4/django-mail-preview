@@ -11,6 +11,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.core.checks import CheckMessage, Error, Warning
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import NoReverseMatch, reverse
 from django.utils.module_loading import import_string
 
 from django_mail_preview.conf import MailPreviewSettings, mail_preview_settings
@@ -25,6 +26,7 @@ __all__ = [
     "check_root",
     "check_storage",
     "check_unknown_settings",
+    "check_urls",
 ]
 
 BACKEND = "django_mail_preview.backends.EmailBackend"
@@ -158,3 +160,23 @@ def check_unknown_settings(
             )
         )
     return messages
+
+
+def check_urls(
+    app_configs: Sequence[AppConfig] | None, **kwargs: Any
+) -> list[CheckMessage]:
+    # Without a URLconf, as in a script or worker set up with
+    # settings.configure(), there are no pages to include.
+    if not backend_is_active() or not getattr(settings, "ROOT_URLCONF", None):
+        return []
+    try:
+        reverse("mail_preview:index")
+    except NoReverseMatch:
+        return [
+            Warning(
+                "The django-mail-preview capture backend is active, but its pages aren't in the URLconf, so captured mail can't be seen.",
+                hint="Add path('__mail-preview__/', include('django_mail_preview.urls')) to the project's urlpatterns.",
+                id="django_mail_preview.W003",
+            )
+        ]
+    return []

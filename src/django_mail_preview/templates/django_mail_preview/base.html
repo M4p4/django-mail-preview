@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Mail preview{% endblock %}</title>
+    <link rel="stylesheet" href="{% url 'mail_preview:asset' name='preview.css' %}">
+    <script src="{% url 'mail_preview:asset' name='preview.js' %}" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1><a href="{% url 'mail_preview:index' %}">Mail preview</a></h1>
+        <section class="sent">
+          <h2>Sent · {{ sent|length }}</h2>
+          {% if sent %}
+            <ul>
+              {% for item in sent %}
+                <li{% if item.meta.id == current %} aria-current="page"{% endif %}>
+                  <a href="{% url 'mail_preview:sent' id=item.meta.id %}">
+                    <span class="subject">{{ item.meta.subject|default:"(no subject)" }}</span>
+                    <span class="to">{{ item.meta.to|join:", " }}</span>
+                    <time datetime="{{ item.meta.date|date:'c' }}">{{ item.meta.date|date:'M j, H:i' }}</time>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+            <form method="post" action="{% url 'mail_preview:sent_clear' %}" data-confirm="Delete all captured messages?">
+              {% csrf_token %}
+              <button type="submit">Clear all</button>
+            </form>
+          {% endif %}
+        </section>
+        <footer class="storage">{{ storage_label }}</footer>
+      </aside>
+      <main class="pane">
+        {% block pane %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+{% extends "django_mail_preview/base.html" %}
+
+{% block title %}{{ parsed.subject|default:"(no subject)" }} · Mail preview{% endblock %}
+
+{% block pane %}
+  <article class="message">
+    <header class="meta">
+      <h1>{{ parsed.subject|default:"(no subject)" }}</h1>
+      <dl>
+        <dt>From</dt>
+        <dd>{{ parsed.from_ }}</dd>
+        <dt>To</dt>
+        <dd>{{ parsed.to }}</dd>
+        {% if parsed.cc %}
+          <dt>Cc</dt>
+          <dd>{{ parsed.cc }}</dd>
+        {% endif %}
+        {% if bcc %}
+          <dt>Bcc</dt>
+          <dd>{{ bcc|join:", " }}</dd>
+        {% endif %}
+        {% if parsed.reply_to %}
+          <dt>Reply-To</dt>
+          <dd>{{ parsed.reply_to }}</dd>
+        {% endif %}
+        {% if meta %}
+          <dt>Date</dt>
+          <dd>{{ meta.date|date:"DATETIME_FORMAT" }}</dd>
+          {% if meta.alias %}
+            <dt>Mailer</dt>
+            <dd>{{ meta.alias }}</dd>
+          {% endif %}
+        {% endif %}
+      </dl>
+      {% if delete_url %}
+        <form method="post" action="{{ delete_url }}" data-confirm="Delete this message?">
+          {% csrf_token %}
+          <button type="submit">Delete</button>
+        </form>
+      {% endif %}
+    </header>
+    <nav class="tabs" aria-label="Message views">
+      {% for name, label, href in tabs %}
+        <a href="{{ href }}" data-tab="{{ name }}"{% if name == tab %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <section class="tab" data-tab="html"{% if tab != "html" %} hidden{% endif %}>
+      {% if parsed.html is not None %}
+        <iframe src="{{ html_url }}" sandbox="allow-popups allow-popups-to-escape-sandbox" title="HTML part"></iframe>
+      {% else %}
+        <p class="empty">The message has no HTML part.</p>
+      {% endif %}
+    </section>
+    <section class="tab" data-tab="text"{% if tab != "text" %} hidden{% endif %}>
+      {% if parsed.text is not None %}
+        <pre>{{ parsed.text }}</pre>
+      {% else %}
+        <p class="empty">The message has no plain-text part.</p>
+      {% endif %}
+    </section>
+    <section class="tab" data-tab="source"{% if tab != "source" %} hidden{% endif %}>
+      <p><a href="{{ eml_url }}">Download .eml</a></p>
+      <pre>{{ parsed.source }}</pre>
+    </section>
+    <section class="tab" data-tab="headers"{% if tab != "headers" %} hidden{% endif %}>
+      <table>
+        {% for name, value in parsed.headers %}
+          <tr>
+            <th scope="row">{{ name }}</th>
+            <td>{{ value }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </section>
+    {% if attachments %}
+      <section class="attachments">
+        <h2>Attachments</h2>
+        <ul>
+          {% for part, href in attachments %}
+            <li>
+              <a href="{{ href }}">{% if part.filename %}{{ part.filename }}{% else %}part-{{ part.index }}{% endif %}</a>
+              <span class="type">{{ part.content_type }}</span>
+              <span class="size">{{ part.size|filesizeformat }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+    {% if inline %}
+      <section class="attachments inline">
+        <h2>Inline</h2>
+        <ul>
+          {% for part, href in inline %}
+            <li>
+              <a href="{{ href }}">{% if part.filename %}{{ part.filename }}{% else %}part-{{ part.index }}{% endif %}</a>
+              <span class="type">{{ part.content_type }}</span>
+              <span class="size">{{ part.size|filesizeformat }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </article>
+{% endblock pane %}

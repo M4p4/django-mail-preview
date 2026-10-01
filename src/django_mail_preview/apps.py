@@ -10,6 +10,7 @@ from django_mail_preview.checks import (
     check_root,
     check_storage,
     check_unknown_settings,
+    check_urls,
 )
 
 
@@ -25,5 +26,6 @@ class DjangoMailPreviewConfig(AppConfig):
             check_root,
             check_backend_without_debug,
             check_unknown_settings,
+            check_urls,
         ):
             register(check)

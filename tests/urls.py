@@ -1,5 +1,5 @@
 from __future__ import annotations
 
-from django.urls import URLPattern, URLResolver
+from django.urls import include, path
 
-urlpatterns: list[URLPattern | URLResolver] = []
+urlpatterns = [path("__mail-preview__/", include("django_mail_preview.urls"))]
