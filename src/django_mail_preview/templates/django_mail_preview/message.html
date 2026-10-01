@@ -60,9 +60,15 @@
     <section class="tab" data-tab="html"{% if tab != "html" %} hidden{% endif %}>
       {% if parsed.html is not None %}
         <div class="width" role="group" aria-label="Frame width">
-          <button type="button" data-width="375">375</button>
-          <button type="button" data-width="600">600</button>
-          <button type="button" data-width="full">Full</button>
+          <button type="button" data-width="375" title="375 px" aria-label="375 px wide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+          </button>
+          <button type="button" data-width="600" title="600 px" aria-label="600 px wide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+          </button>
+          <button type="button" data-width="full" title="Full width" aria-label="Full width">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+          </button>
         </div>
         <iframe src="{{ html_url }}" sandbox="allow-popups allow-popups-to-escape-sandbox" title="HTML part"></iframe>
       {% else %}

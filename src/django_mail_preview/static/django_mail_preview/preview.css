@@ -377,16 +377,26 @@ button:hover {
 
 .width {
   display: none;
+  justify-content: flex-end;
   margin-bottom: 0.75rem;
 }
 
 .js .width {
-  display: inline-flex;
+  display: flex;
 }
 
 .width button {
+  display: inline-flex;
+  align-items: center;
   margin-left: -1px;
+  padding: 0.35rem 0.6rem;
   border-radius: 0;
+}
+
+.width svg {
+  display: block;
+  width: 18px;
+  height: 18px;
 }
 
 .width button:first-child {
