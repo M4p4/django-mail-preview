@@ -5,10 +5,47 @@
     <h1>Mail preview</h1>
     {% if sent %}
       <p>Pick a message from the list.</p>
-    {% elif backend_active %}
-      <p>Nothing captured yet. Send an email and it appears here.</p>
-    {% else %}
-      <p>Nothing captured yet. Set <code>MAILERS</code> (Django 6.1 and later) or <code>EMAIL_BACKEND</code> to <code>django_mail_preview.backends.EmailBackend</code> and send an email.</p>
+    {% endif %}
+    {% if not previews %}
+      <div class="hint">
+        <h2>No previews yet</h2>
+        <p>Create <code>previews.py</code> in one of your apps:</p>
+        <pre><code># accounts/previews.py
+from django_mail_preview import EmailPreview
+
+from .emails import password_reset_email, welcome_email
+from .models import User
+
+
+class AccountEmails(EmailPreview):
+    def password_reset(self):
+        """Sent after the "forgot password" form."""
+        user = User(first_name="Ada", email="ada@example.com")
+        return password_reset_email(user)
+
+    def welcome(self):
+        return welcome_email(User(first_name="Ada"))</code></pre>
+        <p>then refresh this page.</p>
+      </div>
+    {% endif %}
+    {% if not sent %}
+      <div class="hint">
+        <h2>Nothing captured yet</h2>
+        {% if backend_active %}
+          <p>Send an email and it appears here.</p>
+        {% else %}
+          <p>Set <code>MAILERS</code> (Django 6.1 and later) or <code>EMAIL_BACKEND</code> to <code>django_mail_preview.backends.EmailBackend</code> and send an email.</p>
+          <pre><code># settings.py
+
+# Django 6.1 and later
+MAILERS = {
+    "default": {"BACKEND": "django_mail_preview.backends.EmailBackend"},
+}
+
+# Django 5.2 and 6.0
+EMAIL_BACKEND = "django_mail_preview.backends.EmailBackend"</code></pre>
+        {% endif %}
+      </div>
     {% endif %}
   </section>
 {% endblock pane %}

@@ -1,1 +1,469 @@
-/* Styles of the mail preview pages. */
+/* Styles of the mail preview pages: the chrome only. The email itself renders
+   in its own frame and keeps its own colours, in light and dark mode alike. */
+
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --surface: #f5f6f8;
+  --fg: #1c1e21;
+  --muted: #5f6672;
+  --border: #d9dde3;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --danger: #b91c1c;
+  --sidebar-width: 18rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a;
+    --surface: #1e2126;
+    --fg: #e6e8eb;
+    --muted: #9aa3ad;
+    --border: #30353c;
+    --accent: #60a5fa;
+    --accent-fg: #0b1220;
+    --danger: #f87171;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  font: 0.9375rem/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+code,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--muted);
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.empty {
+  color: var(--muted);
+}
+
+/* Layout: a sticky sidebar next to the pane; stacked on a phone. */
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.pane {
+  min-width: 0;
+  padding: 1.5rem 2rem;
+}
+
+@media (max-width: 48rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar,
+  .pane {
+    padding: 1rem 16px;
+  }
+}
+
+/* Sidebar */
+
+.sidebar h1 {
+  font-size: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.sidebar h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sidebar h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sidebar h3 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar li a {
+  display: block;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.sidebar li a:hover {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+.sidebar li[aria-current="page"] a {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.sidebar .subject,
+.sidebar .to,
+.sidebar time {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sidebar .subject {
+  font-weight: 500;
+}
+
+.sidebar .to,
+.sidebar time {
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+.sidebar .empty {
+  margin: 0.25rem 0;
+  font-size: 0.9em;
+}
+
+.sidebar form {
+  margin-top: 0.75rem;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 0.15rem 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.storage {
+  margin-top: 1.5rem;
+  font-size: 0.8em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Start page and its hints */
+
+.start h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+}
+
+.start > p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.hint {
+  max-width: 44rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.hint h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.hint p {
+  margin: 0.5rem 0;
+}
+
+.hint pre {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Message page */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.meta h1 {
+  flex-basis: 100%;
+  font-size: 1.4rem;
+  overflow-wrap: anywhere;
+}
+
+.meta dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  flex: 1 1 20rem;
+  margin: 0;
+}
+
+.meta dt {
+  color: var(--muted);
+}
+
+.meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actions form {
+  margin: 0;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 1.5rem 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs a {
+  margin-bottom: -1px;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabs a:hover {
+  color: var(--fg);
+}
+
+.tabs a[aria-current="page"] {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+}
+
+.tab pre {
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* The frame and its width toggle. The toggle needs the script, so it only
+   shows once the script has run. */
+
+.tab iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 70vh;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.tab[data-width="375"] iframe {
+  width: 375px;
+}
+
+.tab[data-width="600"] iframe {
+  width: 600px;
+}
+
+.width {
+  display: none;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.js .width {
+  display: flex;
+}
+
+.width button {
+  display: inline-flex;
+  align-items: center;
+  margin-left: -1px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0;
+}
+
+.width svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.width button:first-child {
+  margin-left: 0;
+  border-radius: 6px 0 0 6px;
+}
+
+.width button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.width button[aria-pressed="true"] {
+  position: relative;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.attachments {
+  margin-top: 1.5rem;
+}
+
+.attachments h2 {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.attachments ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.attachments li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.attachments .type,
+.attachments .size {
+  font-size: 0.9em;
+  color: var(--muted);
+}
+
+.attachments .size {
+  margin-left: auto;
+}
