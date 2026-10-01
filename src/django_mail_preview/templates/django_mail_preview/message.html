@@ -2,6 +2,8 @@
 
 {% block title %}{{ parsed.subject|default:"(no subject)" }} · Mail preview{% endblock %}
 
+{% block page %}message{% endblock %}
+
 {% block pane %}
   <article class="message">
     <header class="meta">
@@ -40,12 +42,15 @@
           {% endif %}
         {% endif %}
       </dl>
-      {% if delete_url %}
-        <form method="post" action="{{ delete_url }}" data-confirm="Delete this message?">
-          {% csrf_token %}
-          <button type="submit">Delete</button>
-        </form>
-      {% endif %}
+      <div class="actions">
+        <a href="{{ eml_url }}">Download .eml</a>
+        {% if delete_url %}
+          <form method="post" action="{{ delete_url }}" data-confirm="Delete this message?">
+            {% csrf_token %}
+            <button type="submit" class="danger">Delete</button>
+          </form>
+        {% endif %}
+      </div>
     </header>
     <nav class="tabs" aria-label="Message views">
       {% for name, label, href in tabs %}
@@ -54,6 +59,11 @@
     </nav>
     <section class="tab" data-tab="html"{% if tab != "html" %} hidden{% endif %}>
       {% if parsed.html is not None %}
+        <div class="width" role="group" aria-label="Frame width">
+          <button type="button" data-width="375">375</button>
+          <button type="button" data-width="600">600</button>
+          <button type="button" data-width="full">Full</button>
+        </div>
         <iframe src="{{ html_url }}" sandbox="allow-popups allow-popups-to-escape-sandbox" title="HTML part"></iframe>
       {% else %}
         <p class="empty">The message has no HTML part.</p>
@@ -66,10 +76,12 @@
         <p class="empty">The message has no plain-text part.</p>
       {% endif %}
     </section>
-    <section class="tab" data-tab="source"{% if tab != "source" %} hidden{% endif %}>
-      <p><a href="{{ eml_url }}">Download .eml</a></p>
-      <pre>{{ parsed.source }}</pre>
-    </section>
+    {# The source carries every attachment base64-encoded, so it is only on the page when asked for; the Source tab then navigates rather than switching in place. #}
+    {% if tab == "source" %}
+      <section class="tab" data-tab="source">
+        <pre>{{ parsed.source }}</pre>
+      </section>
+    {% endif %}
     <section class="tab" data-tab="headers"{% if tab != "headers" %} hidden{% endif %}>
       <table>
         {% for name, value in parsed.headers %}

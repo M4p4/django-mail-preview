@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from base64 import b64encode
+from importlib.metadata import version
 from unittest.mock import Mock
 
 import django
@@ -199,7 +200,7 @@ def test_message_page(client):
     assert content.count('aria-current="page"') == 2
 
 
-def test_tabs_show_text_source_and_headers(client):
+def test_tabs_show_text_and_headers(client):
     id = capture(plain())
 
     response = client.get(route("sent", id=id))
@@ -207,8 +208,23 @@ def test_tabs_show_text_source_and_headers(client):
     content = response.content.decode()
     assert "The message has no HTML part." in content
     assert "<pre>Hi there." in content
-    assert "Subject: Hello" in content
     assert '<th scope="row">Message-ID</th>' in content
+
+
+def test_source_is_on_the_page_only_when_asked_for(client):
+    """The source carries every attachment base64-encoded, so the other tabs don't ship it."""
+    id = capture(html())
+
+    page = client.get(route("sent", id=id))
+    source = client.get(route("sent", id=id) + "?tab=source")
+
+    # The first line of the attachment's base64 body.
+    encoded = b64encode(SVG).decode()[:76]
+    assert encoded not in page.content.decode()
+    assert 'data-tab="source"' in page.content.decode()  # The tab link stays.
+    assert "Subject: Welcome" in source.content.decode()
+    assert encoded in source.content.decode()
+    assert current_tab(source) == "source"
 
 
 @pytest.mark.parametrize(
@@ -491,6 +507,83 @@ def test_other_assets_are_404(client, path):
     response = client.get(route("index") + path)
 
     assert response.status_code == 404
+
+
+def test_asset_urls_carry_the_package_version(client):
+    response = client.get(route("index"))
+
+    content = response.content.decode()
+    for name in ("preview.css", "preview.js"):
+        assert (
+            f"{route('asset', name=name)}?v={version('django-mail-preview')}" in content
+        )
+
+
+@kinds
+def test_pages_have_no_inline_script_style_or_handler(client, kind):
+    """A strict CSP needs no nonce for the pages: the one script has a ``src``."""
+    pages = urls(kind)
+    rendered = [
+        client.get(route("index")).content.decode(),
+        client.get(pages["page"]).content.decode(),
+        client.get(pages["page"] + "?tab=source").content.decode(),
+    ]
+    templates = [
+        path.read_text()
+        for path in (views.PACKAGE / "templates" / "django_mail_preview").iterdir()
+    ]
+
+    for content in rendered + templates:
+        assert re.findall(r"<script\b(?![^>]*\bsrc=)", content) == []
+        assert "<style" not in content
+        assert re.findall(r"<[^>]*\son\w+\s*=", content) == []
+
+
+def test_body_carries_what_the_live_list_compares_with(client):
+    empty = client.get(route("index"))
+    id = capture(plain())
+    index = client.get(route("index"))
+    message = client.get(route("sent", id=id))
+
+    assert (
+        f'<body data-page="index" data-latest-url="{route("sent_latest")}" '
+        'data-count="0" data-latest="">' in empty.content.decode()
+    )
+    assert f'data-count="1" data-latest="{id}"' in index.content.decode()
+    assert '<body data-page="message"' in message.content.decode()
+    assert "New mail · refresh" in message.content.decode()
+
+
+@pytest.mark.parametrize(("build", "shown"), [(html, True), (plain, False)])
+def test_width_toggle_comes_with_the_html_part(client, build, shown):
+    id = capture(build())
+
+    response = client.get(route("sent", id=id))
+
+    assert ('aria-label="Frame width"' in response.content.decode()) is shown
+
+
+def test_download_link_is_on_every_tab(client):
+    id = capture(plain())
+
+    for tab in ("text", "headers", "source"):
+        response = client.get(route("sent", id=id) + f"?tab={tab}")
+
+        assert f'<a href="{route("sent_eml", id=id)}">Download .eml</a>' in (
+            response.content.decode()
+        )
+
+
+def test_index_explains_how_to_add_previews_until_there_are_some(
+    client, preview_registry
+):
+    with_previews = client.get(route("index"))
+    preview_registry.clear()
+    without = client.get(route("index"))
+
+    assert "class AccountEmails(EmailPreview):" not in with_previews.content.decode()
+    assert "class AccountEmails(EmailPreview):" in without.content.decode()
+    assert "then refresh this page." in without.content.decode()
 
 
 @kinds

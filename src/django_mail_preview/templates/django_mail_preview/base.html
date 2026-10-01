@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Mail preview{% endblock %}</title>
-    <link rel="stylesheet" href="{% url 'mail_preview:asset' name='preview.css' %}">
-    <script src="{% url 'mail_preview:asset' name='preview.js' %}" defer></script>
+    <link rel="stylesheet" href="{% url 'mail_preview:asset' name='preview.css' %}?v={{ version }}">
+    <script src="{% url 'mail_preview:asset' name='preview.js' %}?v={{ version }}" defer></script>
   </head>
-  <body>
+  {# The script polls for new mail and compares with what this page knows. #}
+  <body data-page="{% block page %}index{% endblock %}" data-latest-url="{% url 'mail_preview:sent_latest' %}" data-count="{{ sent|length }}" data-latest="{{ sent.0.meta.id }}">
     <div class="layout">
       <aside class="sidebar">
         <h1><a href="{% url 'mail_preview:index' %}">Mail preview</a></h1>
@@ -27,7 +28,10 @@
           {% endfor %}
         </section>
         <section class="sent">
-          <h2>Sent · {{ sent|length }}</h2>
+          <h2>
+            Sent · {{ sent|length }}
+            <button type="button" class="badge" hidden>New mail · refresh</button>
+          </h2>
           {% if sent %}
             <ul>
               {% for item in sent %}
@@ -42,8 +46,10 @@
             </ul>
             <form method="post" action="{% url 'mail_preview:sent_clear' %}" data-confirm="Delete all captured messages?">
               {% csrf_token %}
-              <button type="submit">Clear all</button>
+              <button type="submit" class="danger">Clear all</button>
             </form>
+          {% else %}
+            <p class="empty">Nothing captured yet.</p>
           {% endif %}
         </section>
         <footer class="storage">{{ storage_label }}</footer>

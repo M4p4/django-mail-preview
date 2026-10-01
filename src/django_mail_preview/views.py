@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import functools
+import importlib.metadata
 from collections.abc import Callable
 from pathlib import Path
 from typing import Concatenate, ParamSpec, TypeVar
@@ -161,11 +162,23 @@ def render(
     """Render one of the package's templates.
 
     ``request`` and ``csrf_token`` are always in the context: the forms need
-    the token, and ``{% csrf_token %}`` warns without it.
+    the token, and ``{% csrf_token %}`` warns without it. ``version`` goes on
+    the asset URLs, so an upgrade gets past the browser's cache.
     """
-    context = {**context, "request": request, "csrf_token": get_token(request)}
+    context = {
+        **context,
+        "request": request,
+        "csrf_token": get_token(request),
+        "version": version(),
+    }
     page = engine().get_template(f"django_mail_preview/{template}")
     return HttpResponse(page.render(Context(context)))
+
+
+@functools.cache
+def version() -> str:
+    """The installed version of the package."""
+    return importlib.metadata.version("django-mail-preview")
 
 
 def sidebar(
