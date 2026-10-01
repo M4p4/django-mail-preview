@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+    tags:
+    - '*.*.*'
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # frozen: v7.0.1
+      with:
+        persist-credentials: false
+    - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # frozen: v10.2.0
+      with:
+        enable-cache: true
+        python-version: '3.14'
+    - name: Cache pre-commit environments
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # frozen: v6.1.0
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+    - name: Run pre-commit
+      run: uvx --with pre-commit-uv pre-commit run --all-files --show-diff-on-failure
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # frozen: v7.0.1
+      with:
+        persist-credentials: false
+    - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # frozen: v10.2.0
+      with:
+        enable-cache: false
+        python-version: '3.14'
+    - name: Build distributions
+      run: uv build
+    - name: Upload distributions
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # frozen: v7.0.1
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
