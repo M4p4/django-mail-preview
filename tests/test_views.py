@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from base64 import b64encode
 from unittest.mock import Mock
 
 import django
@@ -219,7 +220,32 @@ def test_frame_serves_the_prepared_html_under_its_own_policy(client):
     assert response["X-Frame-Options"] == "SAMEORIGIN"
     assert response["Referrer-Policy"] == "no-referrer"
     assert content.startswith('<html><head><base target="_blank"></head>')
-    assert f'<img src="http://testserver{route("sent_part", id=id, n=0)}"' in content
+    assert f'<img src="data:image/png;base64,{b64encode(PNG).decode()}"' in content
+
+
+def test_frame_embeds_inline_parts_so_it_makes_no_gated_request(settings, client):
+    """The sandboxed frame has an opaque origin and sends no cookie, so a cookie-based gate would 404 its part requests."""
+    settings.MAIL_PREVIEW_ALLOW = "tests.test_views.allow_with_key"
+    id = capture(html())
+
+    response = client.get(route("sent_html", id=id), headers={"X-Key": KEY})
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "data:image/png;base64," in content
+    assert route("sent_part", id=id, n=0) not in content
+
+
+def test_frame_leaves_an_unknown_cid_alone(client):
+    message = EmailMultiAlternatives(
+        "Welcome", "Hi there.", "sender@example.com", ["to@example.com"]
+    )
+    message.attach_alternative('<img src="cid:missing" alt="">', "text/html")
+    id = capture(message)
+
+    response = client.get(route("sent_html", id=id))
+
+    assert '<img src="cid:missing" alt="">' in response.content.decode()
 
 
 def test_frame_of_a_message_without_html_is_404(client):
