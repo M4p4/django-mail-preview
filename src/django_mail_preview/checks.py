@@ -10,9 +10,11 @@ from typing import Any
 from django.apps import AppConfig
 from django.conf import settings
 from django.core.checks import CheckMessage, Error, Warning
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 
 from django_mail_preview.conf import MailPreviewSettings, mail_preview_settings
+from django_mail_preview.storage import storage_class
 
 __all__ = [
     "BACKEND",
@@ -21,6 +23,7 @@ __all__ = [
     "check_backend_without_debug",
     "check_max_messages",
     "check_root",
+    "check_storage",
     "check_unknown_settings",
 ]
 
@@ -68,6 +71,28 @@ def check_allow(
             f"MAIL_PREVIEW_ALLOW can't be used: {problem}",
             hint="Set it to the dotted path of a function that takes the request and returns a bool, or remove it to open the pages only while DEBUG is True.",
             id="django_mail_preview.E001",
+        )
+    ]
+
+
+def check_storage(
+    app_configs: Sequence[AppConfig] | None, **kwargs: Any
+) -> list[CheckMessage]:
+    value: object = mail_preview_settings.STORAGE
+    if not isinstance(value, str):
+        problem = f"{value!r} is not a dotted path."
+    else:
+        try:
+            storage_class(value)
+        except ImproperlyConfigured as error:
+            problem = str(error)
+        else:
+            return []
+    return [
+        Error(
+            f"MAIL_PREVIEW_STORAGE can't be used: {problem}",
+            hint='Set it to "files", or to the dotted path of a BaseStorage subclass, or remove it to store messages as files.',
+            id="django_mail_preview.E002",
         )
     ]
 

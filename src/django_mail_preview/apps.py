@@ -8,6 +8,7 @@ from django_mail_preview.checks import (
     check_backend_without_debug,
     check_max_messages,
     check_root,
+    check_storage,
     check_unknown_settings,
 )
 
@@ -19,6 +20,7 @@ class DjangoMailPreviewConfig(AppConfig):
     def ready(self) -> None:
         for check in (
             check_allow,
+            check_storage,
             check_max_messages,
             check_root,
             check_backend_without_debug,
