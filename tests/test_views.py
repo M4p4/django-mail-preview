@@ -363,18 +363,27 @@ def test_post_without_the_csrf_token_is_403(name, kwargs):
     assert response.status_code == 403
 
 
-def test_forms_carry_a_token_the_project_middleware_accepts():
+@pytest.mark.parametrize("project_middleware", [True, False])
+@pytest.mark.parametrize(
+    ("page", "action"), [("index", "sent_clear"), ("sent", "sent_delete")]
+)
+def test_forms_carry_a_token_that_passes(settings, project_middleware, page, action):
+    """The pages set the cookie themselves, so the forms work without the project's CsrfViewMiddleware."""
+    if not project_middleware:
+        settings.MIDDLEWARE = ["django.middleware.clickjacking.XFrameOptionsMiddleware"]
     client = Client(enforce_csrf_checks=True)
     id = capture(plain())
-    page = client.get(route("sent", id=id))
+    kwargs = {"id": id} if page == "sent" else {}
+
+    response = client.get(route(page, **kwargs))
     # One token per form: Delete and Clear all.
     token = re.findall(
-        r'name="csrfmiddlewaretoken" value="([^"]+)"', page.content.decode()
+        r'name="csrfmiddlewaretoken" value="([^"]+)"', response.content.decode()
     )[0]
+    posted = client.post(route(action, **kwargs), {"csrfmiddlewaretoken": token})
 
-    response = client.post(route("sent_delete", id=id), {"csrfmiddlewaretoken": token})
-
-    assert response.status_code == 302
+    assert "csrftoken" in response.cookies
+    assert posted.status_code == 302
     assert FileStorage().list() == []
 
 

@@ -29,7 +29,7 @@ from django.urls import reverse
 from django.utils.http import content_disposition_header
 from django.utils.module_loading import import_string
 from django.views.decorators.clickjacking import xframe_options_sameorigin
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_safe
 
 from django_mail_preview.checks import backend_is_active
@@ -272,6 +272,9 @@ def route(view: str, **kwargs: object) -> str:
 
 @allowed
 @require_safe
+# The page sets the cookie its forms' tokens are checked against, so the forms
+# work whatever middleware the project has.
+@ensure_csrf_cookie
 def index(request: HttpRequest) -> HttpResponse:
     """The sidebar and, until a message is picked, what to do next."""
     return render(request, "index.html", sidebar(get_storage()))
@@ -290,6 +293,7 @@ def sent_latest(request: HttpRequest) -> HttpResponse:
 
 @allowed
 @require_safe
+@ensure_csrf_cookie
 def sent(request: HttpRequest, id: str) -> HttpResponse:
     storage = get_storage()
     meta, raw = captured(storage, id)
