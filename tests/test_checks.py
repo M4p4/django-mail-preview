@@ -33,6 +33,9 @@ ACTIVE = [
 
 NOT_CALLABLE = "staff"
 
+urlpatterns: list[object] = []
+"""A URLconf without the inbox, for the W003 tests."""
+
 
 def allow_all(request):
     """A callable at a dotted path; the check only imports it."""
@@ -202,3 +205,32 @@ def test_unknown_setting_warns(name, hint):
     assert isinstance(result[0], Warning)
     assert name in result[0].msg
     assert result[0].hint == hint
+
+
+@pytest.mark.parametrize("config", ACTIVE)
+def test_backend_without_urls_warns(config):
+    with override_settings(ROOT_URLCONF="tests.test_checks", **config):
+        result = run_checks()
+
+    assert [message.id for message in result] == ["django_mail_preview.W003"]
+    assert isinstance(result[0], Warning)
+    assert (
+        result[0].hint
+        == "Add path('__mail-preview__/', include('django_mail_preview.urls')) to the project's urlpatterns."
+    )
+
+
+@pytest.mark.parametrize("config", ACTIVE)
+def test_backend_with_urls_is_fine(config):
+    with override_settings(ROOT_URLCONF="tests.urls", **config):
+        result = run_checks()
+
+    assert result == []
+
+
+@pytest.mark.parametrize("config", INACTIVE)
+def test_no_urls_without_backend_is_fine(config):
+    with override_settings(ROOT_URLCONF="tests.test_checks", **config):
+        result = run_checks()
+
+    assert result == []

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import django.test
 import pytest
 
 from django_mail_preview.registry import autodiscover, registry
@@ -23,3 +24,24 @@ def preview_registry():
     yield registry
     registry.clear()
     registry.update(snapshot)
+
+
+@pytest.fixture
+def client():
+    """A test client that closes every response it got once the test is over.
+
+    The client only closes a streaming response once its content was read, so
+    an unread ``FileResponse`` would leak its open file and raise a
+    ``ResourceWarning`` under ``PYTHONDEVMODE``.
+    """
+    responses = []
+
+    class Client(django.test.Client):
+        def request(self, **request):
+            response = super().request(**request)
+            responses.append(response)
+            return response
+
+    yield Client()
+    for response in responses:
+        response.close()
