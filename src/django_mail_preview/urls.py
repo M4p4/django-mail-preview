@@ -26,5 +26,17 @@ urlpatterns = [
     re_path(
         rf"^sent/(?P<id>{MESSAGE_ID})/delete/$", views.sent_delete, name="sent_delete"
     ),
+    path("previews/<str:group>/<str:name>/", views.preview, name="preview"),
+    path(
+        "previews/<str:group>/<str:name>/html/",
+        views.preview_html,
+        name="preview_html",
+    ),
+    path(
+        "previews/<str:group>/<str:name>/parts/<int:n>/",
+        views.preview_part,
+        name="preview_part",
+    ),
+    path("previews/<str:group>/<str:name>/eml/", views.preview_eml, name="preview_eml"),
     path("assets/<str:name>", views.asset, name="asset"),
 ]

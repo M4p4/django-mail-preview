@@ -23,6 +23,14 @@
           <dt>Reply-To</dt>
           <dd>{{ parsed.reply_to }}</dd>
         {% endif %}
+        {% if preview %}
+          <dt>Preview</dt>
+          <dd><code>{{ preview.id }}</code></dd>
+          {% if preview.description %}
+            <dt>Description</dt>
+            <dd>{{ preview.description }}</dd>
+          {% endif %}
+        {% endif %}
         {% if meta %}
           <dt>Date</dt>
           <dd>{{ meta.date|date:"DATETIME_FORMAT" }}</dd>

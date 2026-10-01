@@ -11,6 +11,21 @@
     <div class="layout">
       <aside class="sidebar">
         <h1><a href="{% url 'mail_preview:index' %}">Mail preview</a></h1>
+        <section class="previews">
+          <h2>Previews</h2>
+          {% for group, items in previews %}
+            <h3>{{ group }}</h3>
+            <ul>
+              {% for preview in items %}
+                <li{% if preview.id == current %} aria-current="page"{% endif %}>
+                  <a href="{% url 'mail_preview:preview' group=preview.group name=preview.method %}">{{ preview.id }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% empty %}
+            <p class="empty">No previews yet.</p>
+          {% endfor %}
+        </section>
         <section class="sent">
           <h2>Sent · {{ sent|length }}</h2>
           {% if sent %}

@@ -1,4 +1,4 @@
-"""The inbox pages, the frame that shows an email's HTML, and the downloads.
+"""The inbox and preview pages, the frame that shows an email's HTML, and the downloads.
 
 Every view answers 404 unless the request may open the pages: while ``DEBUG``
 is on, or when the ``MAIL_PREVIEW_ALLOW`` callable says so. Templates render
@@ -33,9 +33,11 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_safe
 
+from django_mail_preview.backends import serialise
 from django_mail_preview.checks import backend_is_active
 from django_mail_preview.conf import mail_preview_settings
 from django_mail_preview.message import ParsedMessage, parse, prepare_html
+from django_mail_preview.registry import Preview, get_previews
 from django_mail_preview.storage import (
     BaseStorage,
     FileStorage,
@@ -52,6 +54,10 @@ __all__ = [
     "asset",
     "index",
     "is_allowed",
+    "preview",
+    "preview_eml",
+    "preview_html",
+    "preview_part",
     "sent",
     "sent_clear",
     "sent_delete",
@@ -162,9 +168,18 @@ def render(
     return HttpResponse(page.render(Context(context)))
 
 
-def sidebar(storage: BaseStorage, current: str | None = None) -> dict[str, object]:
-    """What every page's sidebar shows: the captured messages, newest first, and the storage in use."""
+def sidebar(
+    storage: BaseStorage, previews: list[Preview], current: str | None = None
+) -> dict[str, object]:
+    """What every page's sidebar shows: the previews by group, the captured messages newest first, and the storage in use.
+
+    ``current`` is the id of the open preview or message, if any.
+    """
+    groups: dict[str, list[Preview]] = {}
+    for preview in previews:
+        groups.setdefault(preview.group, []).append(preview)
     return {
+        "previews": sorted(groups.items()),
         "sent": storage.list(),
         "current": current,
         "storage_label": storage_label(storage),
@@ -185,6 +200,29 @@ def captured(storage: BaseStorage, id: str) -> tuple[MessageMeta, bytes]:
     if stored is None or stored.raw is None:
         raise Http404(f"No captured message {id}.")
     return stored.meta, stored.raw
+
+
+def find_preview(previews: list[Preview], group: str, name: str) -> Preview:
+    """The preview at ``previews/<group>/<name>/``; 404 when there is none."""
+    for preview in previews:
+        if (preview.group, preview.method) == (group, name):
+            return preview
+    raise Http404(f"No preview {group}.{name}.")
+
+
+def rendered(request: HttpRequest, group: str, name: str) -> bytes:
+    """The message of the preview at ``previews/<group>/<name>/``, built for this request.
+
+    Built on every request and never stored, so the query string reaches the
+    preview's ``params`` in the frame and the downloads too. An error in the
+    preview propagates: the debug page then points at the preview's own code.
+    """
+    return serialise(find_preview(get_previews(), group, name).render(request))
+
+
+def query_string(request: HttpRequest) -> str:
+    """The request's query string, with its ``?``, to pass a preview's ``params`` on to its frame and downloads."""
+    return f"?{request.GET.urlencode()}" if request.GET else ""
 
 
 def message_page(
@@ -283,7 +321,7 @@ def route(view: str, **kwargs: object) -> str:
 @ensure_csrf_cookie
 def index(request: HttpRequest) -> HttpResponse:
     """The sidebar and, until a message is picked, what to do next."""
-    return render(request, "index.html", sidebar(get_storage()))
+    return render(request, "index.html", sidebar(get_storage(), get_previews()))
 
 
 @allowed
@@ -310,7 +348,7 @@ def sent(request: HttpRequest, id: str) -> HttpResponse:
         eml_url=route("sent_eml", id=id),
         part_url=lambda n: route("sent_part", id=id, n=n),
         context={
-            **sidebar(storage, current=id),
+            **sidebar(storage, get_previews(), current=id),
             "meta": meta,
             "bcc": meta.bcc,
             "delete_url": route("sent_delete", id=id),
@@ -357,6 +395,54 @@ def sent_delete(request: HttpRequest, id: str) -> HttpResponse:
 def sent_clear(request: HttpRequest) -> HttpResponse:
     get_storage().clear()
     return HttpResponseRedirect(route("index"))
+
+
+@allowed
+@require_safe
+@ensure_csrf_cookie
+def preview(request: HttpRequest, group: str, name: str) -> HttpResponse:
+    """The page of a preview, built for this request's query string."""
+    previews = get_previews()
+    found = find_preview(previews, group, name)
+    message = found.render(request)
+    query = query_string(request)
+    return message_page(
+        request,
+        parse(serialise(message)),
+        html_url=route("preview_html", group=group, name=name) + query,
+        eml_url=route("preview_eml", group=group, name=name) + query,
+        part_url=lambda n: route("preview_part", group=group, name=name, n=n) + query,
+        context={
+            **sidebar(get_storage(), previews, current=found.id),
+            "preview": found,
+            # Only the message object knows them: Bcc is never serialised.
+            "bcc": message.bcc,
+        },
+    )
+
+
+@allowed
+@require_safe
+@xframe_options_sameorigin
+@without_project_csp
+def preview_html(request: HttpRequest, group: str, name: str) -> HttpResponse:
+    return frame(parse(rendered(request, group, name)))
+
+
+@allowed
+@require_safe
+@without_project_csp
+def preview_part(request: HttpRequest, group: str, name: str, n: int) -> HttpResponse:
+    return part_download(parse(rendered(request, group, name)), n)
+
+
+@allowed
+@require_safe
+@without_project_csp
+def preview_eml(request: HttpRequest, group: str, name: str) -> HttpResponse:
+    return download(
+        rendered(request, group, name), "message/rfc822", f"{group}.{name}.eml"
+    )
 
 
 @allowed

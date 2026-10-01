@@ -1,32 +1,18 @@
 from __future__ import annotations
 
-import sys
-
 import pytest
-from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.http import HttpRequest, QueryDict
-from django.test import override_settings
 
 import django_mail_preview
 from django_mail_preview import EmailPreview, Preview, get_previews
 from django_mail_preview import registry as registry_module
 from django_mail_preview.registry import RESERVED, registry
 from tests import previews
+from tests.helpers import LATE_PREVIEWS
 
 SAMPLE_IDS = ["tests.greeting", "tests.html", "tests.plain"]
-
-LATE_PREVIEWS = """
-from django.core.mail import EmailMessage
-
-from django_mail_preview import EmailPreview
-
-
-class Late(EmailPreview):
-    def welcome(self):
-        return EmailMessage("Late", "Hello", "noreply@example.com", ["ada@example.com"])
-"""
 
 
 def message(subject="Subject"):
@@ -40,23 +26,6 @@ def ids():
 def find(id):
     (preview,) = [preview for preview in get_previews() if preview.id == id]
     return preview
-
-
-@pytest.fixture
-def late_app(tmp_path):
-    """An installed app ``lateapp`` that has no ``previews`` module yet."""
-    package = tmp_path / "lateapp"
-    package.mkdir()
-    (package / "__init__.py").write_text("")
-    sys.path.insert(0, str(tmp_path))
-    try:
-        installed = [config.name for config in apps.get_app_configs()]
-        with override_settings(INSTALLED_APPS=[*installed, "lateapp"]):
-            yield package
-    finally:
-        sys.path.remove(str(tmp_path))
-        for name in [name for name in sys.modules if name.split(".")[0] == "lateapp"]:
-            del sys.modules[name]
 
 
 @pytest.mark.parametrize("name", ["EmailPreview", "Preview", "get_previews"])
