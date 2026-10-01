@@ -8,6 +8,7 @@ from django.core.checks import Error, Warning, run_checks
 from django.test import override_settings
 
 from django_mail_preview.checks import BACKEND, backend_is_active
+from django_mail_preview.storage import FileStorage
 
 SMTP = "django.core.mail.backends.smtp.EmailBackend"
 CONSOLE = "django.core.mail.backends.console.EmailBackend"
@@ -83,6 +84,43 @@ def test_allow_invalid(allow):
 
     assert [message.id for message in result] == ["django_mail_preview.E001"]
     assert isinstance(result[0], Error)
+
+
+@pytest.mark.parametrize(
+    "storage",
+    [
+        "files",
+        "django_mail_preview.storage.FileStorage",
+        "tests.test_storage.MemoryStorage",
+    ],
+)
+def test_storage_valid(storage):
+    with override_settings(MAIL_PREVIEW_STORAGE=storage):
+        result = run_checks()
+
+    assert result == []
+
+
+@pytest.mark.parametrize(
+    ("storage", "problem"),
+    [
+        (None, "None is not a dotted path"),
+        (FileStorage, "is not a dotted path"),
+        ("missing.module.Storage", "missing"),
+        ("tests.test_storage.missing", "missing"),
+        ("FileStorage", "doesn't look like a module path"),
+        ("tests.test_storage.NotAStorage", "is not a BaseStorage subclass"),
+        ("tests.test_storage.meta", "is not a BaseStorage subclass"),
+        ("django_mail_preview.storage.BaseStorage", "is abstract"),
+    ],
+)
+def test_storage_invalid(storage, problem):
+    with override_settings(MAIL_PREVIEW_STORAGE=storage):
+        result = run_checks()
+
+    assert [message.id for message in result] == ["django_mail_preview.E002"]
+    assert isinstance(result[0], Error)
+    assert problem in result[0].msg
 
 
 @pytest.mark.parametrize("value", [1, 100])
