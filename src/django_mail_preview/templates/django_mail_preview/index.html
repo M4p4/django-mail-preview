@@ -20,7 +20,7 @@
             <tr>
               <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a></td>
               <td class="wide">{{ item.meta.from_email }}</td>
-              <td>{{ item.meta.to|join:", " }}</td>
+              <td class="to">{{ item.meta.to|join:", " }}</td>
               <td class="paperclip">
                 {% if item.meta.attachments %}
                   <span class="clip" title="{{ item.meta.attachments }} attachment{{ item.meta.attachments|pluralize }}">{% include "django_mail_preview/_clip.html" %}{{ item.meta.attachments }}</span>

@@ -3,27 +3,39 @@
 
 :root {
   color-scheme: light dark;
-  --bg: #ffffff;
-  --surface: #f5f6f8;
-  --fg: #1c1e21;
-  --muted: #5f6672;
-  --border: #d9dde3;
-  --accent: #2563eb;
+  --bg: #fffefb;
+  --surface: #f5f3ee;
+  --fg: #1f1e1a;
+  --muted: #6b685f;
+  --border: #dedbd2;
+  --accent: #0f766e;
   --accent-fg: #ffffff;
-  --danger: #b91c1c;
+  --danger: #b42318;
+  --hover: color-mix(in srgb, var(--fg) 7%, transparent);
+  --selected: color-mix(in srgb, var(--accent) 16%, transparent);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.08);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
   --sidebar-width: 18rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15171a;
-    --surface: #1e2126;
-    --fg: #e6e8eb;
-    --muted: #9aa3ad;
-    --border: #30353c;
-    --accent: #60a5fa;
-    --accent-fg: #0b1220;
-    --danger: #f87171;
+    --bg: #141412;
+    --surface: #1d1d1a;
+    --fg: #ebe9e3;
+    --muted: #a4a196;
+    --border: #34332e;
+    --accent: #2dd4bf;
+    --accent-fg: #0b1a18;
+    --danger: #f97066;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
   }
 }
 
@@ -70,18 +82,25 @@ pre {
   overflow-wrap: anywhere;
 }
 
+/* One focus ring for everything that takes focus: buttons, tabs, list links,
+   the field and the frame. */
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-button {
+button,
+input {
   font: inherit;
   color: inherit;
+}
+
+button {
+  padding: 0.3rem 0.7rem;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
@@ -106,6 +125,96 @@ button:hover {
   white-space: nowrap;
 }
 
+/* Outline icons, drawn in the text colour. */
+
+.i {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* An icon-only action: its name is in the tooltip and the label. */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.icon:hover {
+  background: var(--hover);
+  border-color: var(--muted);
+  color: var(--fg);
+}
+
+.icon.danger,
+.icon.danger:hover {
+  color: var(--danger);
+}
+
+.icon .i {
+  width: 18px;
+  height: 18px;
+}
+
+/* The wordmark: a tile beside the name, the version in muted text. */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.mark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.version {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 /* Layout: a sticky sidebar next to the pane. On a phone the sidebar stacks
    first, or, with the script, becomes a drawer behind the top bar's button. */
 
@@ -120,14 +229,14 @@ button:hover {
   top: 0;
   max-height: 100vh;
   overflow-y: auto;
-  padding: 1rem;
+  padding: var(--space-4);
   background: var(--surface);
   border-right: 1px solid var(--border);
 }
 
 .pane {
   min-width: 0;
-  padding: 1.5rem 2rem;
+  padding: var(--space-6) var(--space-8);
 }
 
 .topbar,
@@ -148,16 +257,10 @@ button:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-4);
     padding: 0.6rem 16px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-  }
-
-  .topbar a {
-    font-weight: 600;
-    color: inherit;
-    text-decoration: none;
   }
 
   /* Without the script there is nothing to open: the sidebar is in the flow. */
@@ -174,7 +277,7 @@ button:hover {
 
   .sidebar,
   .pane {
-    padding: 1rem 16px;
+    padding: var(--space-4) 16px;
   }
 
   .js .sidebar {
@@ -206,28 +309,25 @@ button:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .js .sidebar {
-    transition: none;
+  *,
+  ::before,
+  ::after {
+    transition: none !important;
   }
 }
 
 /* Sidebar */
 
 .sidebar h1 {
-  font-size: 1.1rem;
   margin-bottom: 1.25rem;
-}
-
-.sidebar h1 a {
-  color: inherit;
-  text-decoration: none;
+  font-size: 1.05rem;
 }
 
 .sidebar h2 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 1.25rem 0 0.5rem;
+  gap: var(--space-2);
+  margin: 1.25rem 0 var(--space-2);
   font-size: 0.8rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -244,8 +344,8 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
+  padding: var(--space-1) 0.6rem;
+  border-radius: var(--radius);
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--muted);
@@ -274,7 +374,7 @@ button:hover {
 }
 
 .sidebar summary:hover {
-  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  background: var(--hover);
 }
 
 .sidebar summary .count {
@@ -291,18 +391,18 @@ button:hover {
 .sidebar li a {
   display: block;
   padding: 0.4rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
   color: inherit;
   text-decoration: none;
   overflow-wrap: anywhere;
 }
 
 .sidebar li a:hover {
-  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  background: var(--hover);
 }
 
 .sidebar li[aria-current="page"] a {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: var(--selected);
 }
 
 /* A captured message: subject and time, then recipients and the paperclip. */
@@ -310,7 +410,7 @@ button:hover {
 .sidebar .line {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -346,18 +446,18 @@ button:hover {
   white-space: nowrap;
 }
 
-.clip svg {
+.clip .i {
   width: 0.95em;
   height: 0.95em;
 }
 
 .sidebar .empty {
-  margin: 0.25rem 0;
+  margin: var(--space-1) 0;
   font-size: 0.9em;
 }
 
 .sidebar form {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 
 .badge {
@@ -374,7 +474,7 @@ button:hover {
 }
 
 .storage {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
   font-size: 0.8em;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -382,20 +482,20 @@ button:hover {
 
 /* Start page: the inbox table, and the hints */
 
-.start h1 {
-  margin-bottom: 0.5rem;
-  font-size: 1.4rem;
-}
-
-.start h1 .count {
+.pane .count {
   margin-left: 0.3rem;
   font-size: 0.8em;
   font-weight: 500;
   color: var(--muted);
 }
 
+.start h1 {
+  margin-bottom: var(--space-2);
+  font-size: 1.4rem;
+}
+
 .inbox {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 
 .inbox th {
@@ -405,7 +505,18 @@ button:hover {
 }
 
 .inbox tbody tr:hover {
-  background: var(--surface);
+  background: var(--hover);
+}
+
+/* Addresses break between recipients, never inside one, and a subject may
+   break anywhere. From and size go first when the pane narrows. */
+
+.inbox td {
+  overflow-wrap: normal;
+}
+
+.inbox td:first-child {
+  overflow-wrap: anywhere;
 }
 
 .inbox .num {
@@ -423,99 +534,189 @@ button:hover {
   color: var(--muted);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 64rem) {
   .inbox .wide {
     display: none;
+  }
+}
+
+/* On a phone each row is a card: subject, paperclip and time on one line, the
+   recipients under them, so no address has to break inside. */
+
+@media (max-width: 48rem) {
+  .inbox thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .inbox tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0 var(--space-2);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inbox td {
+    grid-row: 1;
+    padding: 0;
+    border: 0;
+  }
+
+  .inbox td.paperclip {
+    grid-column: 2;
+  }
+
+  .inbox td:last-child {
+    grid-column: 3;
+  }
+
+  .inbox td.to {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    font-size: 0.9em;
+    color: var(--muted);
+    overflow-wrap: anywhere;
   }
 }
 
 .hint {
   max-width: 44rem;
   margin-top: 1.25rem;
-  padding: 1rem 1.25rem;
+  padding: var(--space-4) 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
 }
 
 .hint h2 {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   font-size: 1rem;
 }
 
 .hint p {
-  margin: 0.5rem 0;
+  margin: var(--space-2) 0;
 }
 
 .hint pre {
-  margin: 0.75rem 0;
-  padding: 0.75rem 1rem;
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
-/* Message page */
-
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-}
+/* Message page: the header, mail-client style. */
 
 .meta h1 {
-  flex-basis: 100%;
+  margin-bottom: var(--space-3);
   font-size: 1.4rem;
   overflow-wrap: anywhere;
 }
 
-.meta dl {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 0.25rem 1rem;
-  flex: 1 1 20rem;
-  margin: 0;
+.sender {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
-.meta dt {
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.who {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.from {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.route {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin: 0;
+  font-size: 0.9em;
   color: var(--muted);
 }
 
-.meta dd {
-  margin: 0;
+.route span {
   overflow-wrap: anywhere;
+}
+
+.route span + span::before {
+  content: "·";
+  margin-right: var(--space-2);
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-left: auto;
+  font-size: 0.9em;
+  color: var(--muted);
+  text-align: right;
 }
 
 .actions {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-2);
 }
 
 .actions form {
   margin: 0;
 }
 
+.description {
+  max-width: 60rem;
+  margin: var(--space-3) 0 0;
+}
+
+/* Tabs */
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
-  margin: 1.5rem 0 1rem;
+  gap: var(--space-1);
+  margin: var(--space-6) 0 var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
 .tabs a {
   margin-bottom: -1px;
-  padding: 0.5rem 0.9rem;
+  padding: var(--space-2) 0.9rem;
   border-bottom: 2px solid transparent;
+  border-radius: var(--radius) var(--radius) 0 0;
   color: var(--muted);
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .tabs a:hover {
+  background: var(--hover);
   color: var(--fg);
 }
 
@@ -525,72 +726,120 @@ button:hover {
 }
 
 .tab pre {
-  padding: 1rem;
+  padding: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
-/* The frame and its width toggle. The toggle needs the script, so it only
-   shows once the script has run. */
+/* The frame's toolbar: the width presets and the field on the left, the link
+   on the right. The width controls need the script and show once it has run. */
 
-.tab iframe {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-height: 70vh;
-  margin: 0 auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #ffffff;
-}
-
-.tab[data-width="375"] iframe {
-  width: 375px;
-}
-
-.tab[data-width="600"] iframe {
-  width: 600px;
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .width {
   display: none;
-  justify-content: flex-end;
-  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .js .width {
   display: flex;
 }
 
-.width button {
+.presets {
+  display: inline-flex;
+}
+
+.presets button {
   display: inline-flex;
   align-items: center;
   margin-left: -1px;
-  padding: 0.35rem 0.6rem;
+  padding: 0.35rem 0.55rem;
   border-radius: 0;
+  color: var(--muted);
 }
 
-.width svg {
-  display: block;
+.presets button:hover {
+  position: relative;
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.presets button:first-child {
+  margin-left: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.presets button:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.presets button[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.presets .i {
   width: 18px;
   height: 18px;
 }
 
-.width button:first-child {
-  margin-left: 0;
-  border-radius: 6px 0 0 6px;
+.custom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.9em;
+  color: var(--muted);
 }
 
-.width button:last-child {
-  border-radius: 0 6px 6px 0;
+.custom input {
+  width: 5rem;
+  padding: 0.3rem 0.4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: right;
 }
 
-.width button[aria-pressed="true"] {
-  position: relative;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-fg);
+.newtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  font-size: 0.9em;
+  text-decoration: none;
+}
+
+.newtab:hover {
+  text-decoration: underline;
+}
+
+/* The frame keeps the email's own colours; the script sets its width. The
+   border sits outside that width, so a 375 px frame shows the email at 375 px. */
+
+.tab iframe {
+  display: block;
+  box-sizing: content-box;
+  width: 100%;
+  max-width: calc(100% - 2px);
+  min-height: 70vh;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 table {
@@ -613,35 +862,60 @@ th {
   white-space: nowrap;
 }
 
-.attachments {
-  margin-top: 1.5rem;
+/* Parts: one list, a glyph per kind, the row lights up as a download. */
+
+.parts {
+  margin-top: var(--space-6);
 }
 
-.attachments h2 {
-  margin-bottom: 0.5rem;
+.parts h2 {
+  margin-bottom: var(--space-2);
   font-size: 0.95rem;
 }
 
-.attachments ul {
+.parts ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.attachments li {
+.parts li {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0.45rem var(--space-2);
+  border-radius: var(--radius);
 }
 
-.attachments .type,
-.attachments .size {
+.parts li:hover {
+  background: var(--hover);
+}
+
+.parts .i {
+  color: var(--muted);
+}
+
+.parts a {
+  overflow-wrap: anywhere;
+}
+
+.parts .type,
+.parts .size {
   font-size: 0.9em;
   color: var(--muted);
 }
 
-.attachments .size {
+.parts .label {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.parts .size {
   margin-left: auto;
+  white-space: nowrap;
 }

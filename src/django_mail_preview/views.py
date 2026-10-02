@@ -12,6 +12,7 @@ import base64
 import functools
 import importlib.metadata
 from collections.abc import Callable
+from email.utils import parseaddr
 from pathlib import Path
 from typing import Concatenate, ParamSpec, TypeVar
 
@@ -247,25 +248,30 @@ def message_page(
     part_url: Callable[[int], str],
     context: dict[str, object],
 ) -> HttpResponse:
-    """The page of a message, captured or previewed: the meta block, the tabs and the parts."""
+    """The page of a message, captured or previewed: the header, the tabs and the parts."""
     tab = request.GET.get("tab", "")
     if tab not in dict(TABS):
         tab = "html" if parsed.html is not None else "text"
-    parts = [(part, part_url(part.index)) for part in parsed.parts]
     return render(
         request,
         "message.html",
         {
             **context,
             "parsed": parsed,
+            "initial": initial(parsed.from_),
             "tab": tab,
             "tabs": [(name, label, tab_url(request, name)) for name, label in TABS],
             "html_url": html_url,
             "eml_url": eml_url,
-            "inline": [(part, href) for part, href in parts if part.is_inline],
-            "attachments": [(part, href) for part, href in parts if not part.is_inline],
+            "parts": [(part, part_url(part.index)) for part in parsed.parts],
         },
     )
+
+
+def initial(sender: str) -> str:
+    """The avatar's letter: the first letter or digit of the sender's name, or of the address."""
+    name, address = parseaddr(sender)
+    return next((c.upper() for c in (name or address) if c.isalnum()), "?")
 
 
 def tab_url(request: HttpRequest, tab: str) -> str:
