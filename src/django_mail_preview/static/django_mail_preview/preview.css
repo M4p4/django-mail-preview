@@ -97,7 +97,17 @@ button:hover {
   color: var(--muted);
 }
 
-/* Layout: a sticky sidebar next to the pane; stacked on a phone. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Layout: a sticky sidebar next to the pane. On a phone the sidebar stacks
+   first, or, with the script, becomes a drawer behind the top bar's button. */
 
 .layout {
   display: grid;
@@ -120,9 +130,39 @@ button:hover {
   padding: 1.5rem 2rem;
 }
 
+.topbar,
+.scrim {
+  display: none;
+}
+
 @media (max-width: 48rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar a {
+    font-weight: 600;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Without the script there is nothing to open: the sidebar is in the flow. */
+  html:not(.js) .menu {
+    display: none;
   }
 
   .sidebar {
@@ -135,6 +175,39 @@ button:hover {
   .sidebar,
   .pane {
     padding: 1rem 16px;
+  }
+
+  .js .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    width: min(20rem, 85vw);
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+    box-shadow: 0 0 24px rgb(0 0 0 / 0.25);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .js .layout.nav-open .sidebar {
+    transform: none;
+  }
+
+  .js .layout.nav-open .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    background: rgb(0 0 0 / 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .sidebar {
+    transition: none;
   }
 }
 
@@ -161,11 +234,52 @@ button:hover {
   color: var(--muted);
 }
 
-.sidebar h3 {
-  margin: 0.75rem 0 0.25rem;
+/* Preview groups fold; the caret turns with them. */
+
+.sidebar details {
+  margin-top: 0.35rem;
+}
+
+.sidebar summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.sidebar summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar summary::before {
+  content: "";
+  flex: none;
+  width: 0.4em;
+  height: 0.4em;
+  margin-top: -0.2em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.sidebar details:not([open]) summary::before {
+  margin-top: 0;
+  transform: rotate(-45deg);
+}
+
+.sidebar summary:hover {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+.sidebar summary .count {
+  font-size: 0.85em;
+  font-weight: 400;
 }
 
 .sidebar ul {
@@ -191,10 +305,19 @@ button:hover {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
+/* A captured message: subject and time, then recipients and the paperclip. */
+
+.sidebar .line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .sidebar .subject,
-.sidebar .to,
-.sidebar time {
-  display: block;
+.sidebar .to {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -205,9 +328,27 @@ button:hover {
 }
 
 .sidebar .to,
-.sidebar time {
+.sidebar time,
+.sidebar .clip {
   font-size: 0.85em;
   color: var(--muted);
+}
+
+.sidebar time,
+.sidebar .clip {
+  flex: none;
+}
+
+.clip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
+.clip svg {
+  width: 0.95em;
+  height: 0.95em;
 }
 
 .sidebar .empty {
@@ -239,16 +380,53 @@ button:hover {
   overflow-wrap: anywhere;
 }
 
-/* Start page and its hints */
+/* Start page: the inbox table, and the hints */
 
 .start h1 {
   margin-bottom: 0.5rem;
   font-size: 1.4rem;
 }
 
-.start > p {
-  margin: 0;
+.start h1 .count {
+  margin-left: 0.3rem;
+  font-size: 0.8em;
+  font-weight: 500;
   color: var(--muted);
+}
+
+.inbox {
+  margin-top: 0.75rem;
+}
+
+.inbox th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inbox tbody tr:hover {
+  background: var(--surface);
+}
+
+.inbox .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.inbox td.paperclip {
+  padding-right: 0;
+  color: var(--muted);
+}
+
+.inbox time {
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+@media (max-width: 48rem) {
+  .inbox .wide {
+    display: none;
+  }
 }
 
 .hint {

@@ -2,9 +2,38 @@
 
 {% block pane %}
   <section class="start">
-    <h1>Mail preview</h1>
     {% if sent %}
-      <p>Pick a message from the list.</p>
+      <h1>Sent <span class="count">{{ sent|length }}</span></h1>
+      <table class="inbox">
+        <thead>
+          <tr>
+            <th scope="col">Subject</th>
+            <th scope="col" class="wide">From</th>
+            <th scope="col">To</th>
+            <th scope="col"><span class="visually-hidden">Attachments</span></th>
+            <th scope="col" class="wide num">Size</th>
+            <th scope="col">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in sent %}
+            <tr>
+              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a></td>
+              <td class="wide">{{ item.meta.from_email }}</td>
+              <td>{{ item.meta.to|join:", " }}</td>
+              <td class="paperclip">
+                {% if item.meta.attachments %}
+                  <span class="clip" title="{{ item.meta.attachments }} attachment{{ item.meta.attachments|pluralize }}">{% include "django_mail_preview/_clip.html" %}{{ item.meta.attachments }}</span>
+                {% endif %}
+              </td>
+              <td class="wide num">{{ item.meta.size|filesizeformat }}</td>
+              <td><time datetime="{{ item.meta.date|date:'c' }}">{{ item.meta.date|date:'M j, H:i' }}</time></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <h1>Mail preview</h1>
     {% endif %}
     {% if not previews %}
       <div class="hint">

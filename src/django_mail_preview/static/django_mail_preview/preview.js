@@ -1,5 +1,6 @@
-/* Behaviour of the mail preview pages: tabs, width toggle, confirmations and the
-   live list. The links and forms work without it; this makes them instant. */
+/* Behaviour of the mail preview pages: tabs, width toggle, the drawer on a
+   phone, folding preview groups, confirmations and the live list. The links and
+   forms work without it; this makes them instant. */
 (() => {
   document.documentElement.classList.add("js");
 
@@ -46,6 +47,66 @@
       button.addEventListener("click", () => setWidth(button.dataset.width));
     });
   }
+
+  // On a phone the sidebar is a drawer behind the Menu button: the scrim and
+  // Escape close it, focus goes in on open and back to the button on close,
+  // and Tab stays inside while it is open. Closed, the drawer is inert, so
+  // neither the keyboard nor a screen reader lands in it.
+  const layout = document.querySelector(".layout");
+  const menu = document.querySelector(".menu");
+  const scrim = document.querySelector(".scrim");
+  const sidebar = document.getElementById("sidebar");
+  const narrow = matchMedia("(max-width: 48rem)");
+  const focusable = () => sidebar.querySelectorAll("a[href], button:not([hidden]), summary");
+  const isOpen = () => layout.classList.contains("nav-open");
+  const syncNav = () => {
+    sidebar.inert = narrow.matches && !isOpen();
+  };
+  const setNav = (open) => {
+    layout.classList.toggle("nav-open", open);
+    menu.setAttribute("aria-expanded", String(open));
+    scrim.hidden = !open;
+    syncNav();
+    (open ? focusable()[0] : menu).focus();
+  };
+  narrow.addEventListener("change", syncNav);
+  syncNav();
+  menu.addEventListener("click", () => setNav(!isOpen()));
+  scrim.addEventListener("click", () => setNav(false));
+  document.addEventListener("keydown", (event) => {
+    if (!isOpen()) return;
+    if (event.key === "Escape") setNav(false);
+    if (event.key !== "Tab") return;
+    const items = focusable();
+    const edge = event.shiftKey ? items[0] : items[items.length - 1];
+    if (document.activeElement !== edge) return;
+    event.preventDefault();
+    (event.shiftKey ? items[items.length - 1] : items[0]).focus();
+  });
+
+  // Preview groups fold. Closed ones are remembered; the group of the open
+  // preview never starts closed.
+  const GROUPS_KEY = "mail-preview-closed-groups";
+  let closed = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(GROUPS_KEY));
+    if (Array.isArray(stored)) closed = stored;
+  } catch {
+    // Storage may be unavailable; every group then starts open.
+  }
+  document.querySelectorAll(".sidebar details[data-group]").forEach((group) => {
+    const name = group.dataset.group;
+    if (closed.includes(name) && !group.querySelector("[aria-current]")) group.open = false;
+    group.addEventListener("toggle", () => {
+      closed = closed.filter((other) => other !== name);
+      if (!group.open) closed.push(name);
+      try {
+        localStorage.setItem(GROUPS_KEY, JSON.stringify(closed));
+      } catch {
+        // See above.
+      }
+    });
+  });
 
   // Delete and Clear all ask first.
   document.querySelectorAll("form[data-confirm]").forEach((form) => {
