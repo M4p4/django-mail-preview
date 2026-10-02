@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from base64 import b64encode
+from dataclasses import replace
+from datetime import datetime, timezone
 from importlib.metadata import version
 from unittest.mock import Mock
 
@@ -14,7 +16,7 @@ from django.urls import reverse
 from django_mail_preview import EmailPreview, views
 from django_mail_preview.backends import EmailBackend
 from django_mail_preview.checks import BACKEND
-from django_mail_preview.storage import FileStorage
+from django_mail_preview.storage import FileStorage, new_id
 from tests.helpers import LATE_PREVIEWS, PNG, inline_image
 
 FRAME_CSP = (
@@ -29,6 +31,7 @@ HTML = (
 )
 SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
 UNKNOWN_ID = "20261001-120000-123456-0badcafe"
+OLD = datetime(2025, 1, 2, 12, 0, tzinfo=timezone.utc)
 KEY = "open-sesame"
 SAMPLE = {"group": "tests", "name": "html"}
 """The sample preview with an inline image and an attachment, from ``tests/previews.py``."""
@@ -145,20 +148,83 @@ def test_allow_callable_replaces_the_debug_rule(settings, client, debug):
     assert allowed.status_code == 200
 
 
-def test_index_lists_captured_mail_newest_first(client):
+def test_index_lists_captured_mail_as_a_table_newest_first(client):
     first = capture(plain("First"))
-    second = capture(plain("Second"))
+    second = capture(html("Second"))
 
     response = client.get(route("index"))
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert "Sent · 2" in content
+    assert "Sent · 2" in content  # The sidebar.
+    assert '<h1>Sent <span class="count">2</span></h1>' in content
     assert content.index(route("sent", id=second)) < content.index(
         route("sent", id=first)
     )
+    rows = re.findall(r"<tr>\s*<td>(.*?)</tr>", content, re.S)
+    assert len(rows) == 2
+    assert f'<a href="{route("sent", id=second)}">Second</a>' in rows[0]
+    assert '<td class="wide">sender@example.com</td>' in rows[0]
+    assert "<td>to@example.com</td>" in rows[0]
+    assert 'title="2 attachments"' in rows[0]
+    assert re.search(r'<td class="wide num">[\d.]+\xa0(bytes|KB)</td>', rows[0])
+    assert re.search(r'<time datetime="[^"]+">\w{3} \d+, \d\d:\d\d</time>', rows[0])
+    assert '<span class="clip"' not in rows[1]
+    assert "Nothing captured yet." not in content
     assert 'name="csrfmiddlewaretoken"' in content
     assert f"files · {FileStorage().root}" in content
+
+
+def test_index_escapes_a_subject_with_markup(client):
+    capture(plain("<b>Bold</b> & co"))
+
+    content = client.get(route("index")).content.decode()
+
+    assert "&lt;b&gt;Bold&lt;/b&gt; &amp; co" in content
+    assert "<b>Bold</b>" not in content
+
+
+def test_index_without_mail_shows_the_hint_instead_of_the_table(client):
+    content = client.get(route("index")).content.decode()
+
+    assert "<table" not in content
+    assert "<h1>Mail preview</h1>" in content
+    assert "Nothing captured yet." in content
+
+
+def test_sidebar_shows_the_time_for_today_and_the_date_for_older_mail(client):
+    storage = FileStorage()
+    capture(plain("Recent"))
+    recent = storage.list()[0].meta
+    old = replace(recent, id=new_id(OLD), subject="Old", date=OLD)
+    storage.add(b"Subject: Old\r\n\r\nHi.\r\n", old)
+
+    content = client.get(route("index")).content.decode()
+
+    assert re.search(r'<time datetime="[^"]+" title="[^"]+">\d\d:\d\d</time>', content)
+    assert ">Jan 2</time>" in content
+    # The paperclip only shows with attachments: neither message has any.
+    assert '<span class="clip"' not in content
+
+
+def test_sidebar_shows_the_attachment_count(client):
+    capture(html())
+
+    content = client.get(route("index")).content.decode()
+
+    # Once in the sidebar, once in the table.
+    assert content.count('<span class="clip" title="2 attachments">') == 2
+
+
+def test_top_bar_button_controls_the_sidebar(client):
+    content = client.get(route("index")).content.decode()
+
+    assert (
+        '<button type="button" class="menu" aria-controls="sidebar" '
+        'aria-expanded="false">Menu</button>' in content
+    )
+    assert '<aside class="sidebar" id="sidebar">' in content
+    assert '<div class="scrim" hidden></div>' in content
 
 
 def test_index_hints_at_the_backend_until_it_is_active(settings, client):
@@ -838,14 +904,23 @@ def test_sidebar_lists_previews_by_group(client):
     response = client.get(route("index"))
 
     content = response.content.decode()
-    assert re.findall(r"<h3>(\w+)</h3>", content) == ["accounts", "shop", "tests"]
+    assert re.findall(r'<details class="group" data-group="(\w+)" open>', content) == [
+        "accounts",
+        "shop",
+        "tests",
+    ]
+    assert '<summary>accounts <span class="count">1</span></summary>' in content
+    # The method name is the link; the id stays in the tooltip.
     assert (
-        content.index("accounts.welcome")
-        < content.index("shop.order")
-        < content.index("tests.greeting")
-        < content.index("tests.html")
+        f'<a href="{route("preview", group="shop", name="order")}" '
+        'title="shop.order">order</a>' in content
     )
-    assert route("preview", group="shop", name="order") in content
+    assert (
+        content.index('title="accounts.welcome"')
+        < content.index('title="shop.order"')
+        < content.index('title="tests.greeting"')
+        < content.index('title="tests.html"')
+    )
     assert "No previews yet." not in content
 
 
@@ -856,7 +931,7 @@ def test_sidebar_without_previews(client, preview_registry):
 
     content = response.content.decode()
     assert "No previews yet." in content
-    assert "<h3>" not in content
+    assert "<details" not in content
 
 
 def test_previews_module_created_after_start_appears_on_the_next_request(

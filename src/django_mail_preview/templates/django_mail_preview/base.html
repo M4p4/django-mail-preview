@@ -10,19 +10,27 @@
   {# The script polls for new mail and compares with what this page knows. #}
   <body data-page="{% block page %}index{% endblock %}" data-latest-url="{% url 'mail_preview:sent_latest' %}" data-count="{{ sent|length }}" data-latest="{{ sent.0.meta.id }}">
     <div class="layout">
-      <aside class="sidebar">
+      {# On a phone the sidebar is a drawer behind this bar's button; the script makes it one. #}
+      <header class="topbar">
+        <a href="{% url 'mail_preview:index' %}">Mail preview</a>
+        <button type="button" class="menu" aria-controls="sidebar" aria-expanded="false">Menu</button>
+      </header>
+      <div class="scrim" hidden></div>
+      <aside class="sidebar" id="sidebar">
         <h1><a href="{% url 'mail_preview:index' %}">Mail preview</a></h1>
         <section class="previews">
           <h2>Previews</h2>
           {% for group, items in previews %}
-            <h3>{{ group }}</h3>
-            <ul>
-              {% for preview in items %}
-                <li{% if preview.id == current %} aria-current="page"{% endif %}>
-                  <a href="{% url 'mail_preview:preview' group=preview.group name=preview.method %}">{{ preview.id }}</a>
-                </li>
-              {% endfor %}
-            </ul>
+            <details class="group" data-group="{{ group }}" open>
+              <summary>{{ group }} <span class="count">{{ items|length }}</span></summary>
+              <ul>
+                {% for preview in items %}
+                  <li{% if preview.id == current %} aria-current="page"{% endif %}>
+                    <a href="{% url 'mail_preview:preview' group=preview.group name=preview.method %}" title="{{ preview.id }}">{{ preview.method }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </details>
           {% empty %}
             <p class="empty">No previews yet.</p>
           {% endfor %}
@@ -33,13 +41,21 @@
             <button type="button" class="badge" hidden>New mail · refresh</button>
           </h2>
           {% if sent %}
+            {% now "Y-m-d" as today %}
             <ul>
               {% for item in sent %}
                 <li{% if item.meta.id == current %} aria-current="page"{% endif %}>
                   <a href="{% url 'mail_preview:sent' id=item.meta.id %}">
-                    <span class="subject">{{ item.meta.subject|default:"(no subject)" }}</span>
-                    <span class="to">{{ item.meta.to|join:", " }}</span>
-                    <time datetime="{{ item.meta.date|date:'c' }}">{{ item.meta.date|date:'M j, H:i' }}</time>
+                    <span class="line">
+                      <span class="subject">{{ item.meta.subject|default:"(no subject)" }}</span>
+                      <time datetime="{{ item.meta.date|date:'c' }}" title="{{ item.meta.date|date:'DATETIME_FORMAT' }}">{% if item.meta.date|date:'Y-m-d' == today %}{{ item.meta.date|date:'H:i' }}{% else %}{{ item.meta.date|date:'M j' }}{% endif %}</time>
+                    </span>
+                    <span class="line">
+                      <span class="to">{{ item.meta.to|join:", " }}</span>
+                      {% if item.meta.attachments %}
+                        <span class="clip" title="{{ item.meta.attachments }} attachment{{ item.meta.attachments|pluralize }}">{% include "django_mail_preview/_clip.html" %}{{ item.meta.attachments }}</span>
+                      {% endif %}
+                    </span>
                   </a>
                 </li>
               {% endfor %}
