@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from email.message import EmailMessage, MIMEPart
 
-__all__ = ["ParsedMessage", "Part", "parse", "prepare_html"]
+__all__ = ["MimeNode", "ParsedMessage", "Part", "parse", "prepare_html"]
 
 CID = re.compile(r"""(?<=["'(=])cid:([^"'\s()<>]+)""")
 """A ``cid:`` reference in an attribute value or a CSS ``url()``, capturing the id."""
@@ -46,6 +46,20 @@ class Part:
 
 
 @dataclass(frozen=True)
+class MimeNode:
+    """A part of the MIME tree, containers included: one line of the MIME tab."""
+
+    content_type: str
+    disposition: str | None
+    """``inline`` or ``attachment`` when the part says so."""
+    filename: str | None
+    size: int | None
+    """Decoded size of a leaf; ``None`` for a ``multipart/*`` container."""
+    children: list[MimeNode]
+    """The parts of a container, in order; a leaf has none."""
+
+
+@dataclass(frozen=True)
 class ParsedMessage:
     headers: list[tuple[str, str]]
     """Every header in order, decoded."""
@@ -58,6 +72,8 @@ class ParsedMessage:
     html: str | None
     text: str | None
     parts: list[Part]
+    tree: MimeNode
+    """The MIME structure: the ``multipart/*`` containers and their parts."""
     source: str
     """The raw message decoded for display, with CRLF normalised to LF."""
 
@@ -84,6 +100,7 @@ def parse(raw: bytes) -> ParsedMessage:
         html=None if html is None else _text(html),
         text=None if text is None else _text(text),
         parts=parts,
+        tree=_tree(message),
         source=raw.decode("utf-8", errors="replace").replace("\r\n", "\n"),
     )
 
@@ -117,6 +134,22 @@ def _leaves(part: MIMEPart) -> Iterator[MIMEPart]:
             yield from _leaves(subpart)
     else:
         yield part
+
+
+def _tree(part: MIMEPart) -> MimeNode:
+    """The part and, for a ``multipart/*`` container, its parts below it.
+
+    An attached message is one leaf, as in ``_leaves``, so the sizes match the
+    parts list.
+    """
+    multipart = part.get_content_maintype() == "multipart"
+    return MimeNode(
+        content_type=part.get_content_type(),
+        disposition=part.get_content_disposition(),
+        filename=part.get_filename(),
+        size=None if multipart else len(_content(part)),
+        children=[_tree(child) for child in part.iter_parts()] if multipart else [],
+    )
 
 
 def _part(index: int, part: MIMEPart) -> Part:

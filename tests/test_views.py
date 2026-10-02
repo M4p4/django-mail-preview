@@ -262,7 +262,8 @@ def test_message_page(client):
     assert route("sent_part", id=id, n=1) in content
     assert "report.svg" in content
     assert "part-0" in content
-    assert content.count('<span class="label">inline</span>') == 1
+    # Once in the parts list, once in the MIME tree.
+    assert content.count('<span class="label">inline</span>') == 2
     # The header: the sender's initial and the date.
     assert '<span class="avatar" aria-hidden="true">S</span>' in content
     assert '<time class="date"' in content
@@ -305,6 +306,7 @@ def test_source_is_on_the_page_only_when_asked_for(client):
         (html, "?tab=text", "text"),
         (html, "?tab=source", "source"),
         (plain, "?tab=headers", "headers"),
+        (plain, "?tab=mime", "mime"),
         (html, "?tab=bogus", "html"),
     ],
 )
@@ -642,7 +644,7 @@ def test_frame_toolbar_comes_with_the_html_part(client, build, shown):
 def test_download_link_is_on_every_tab(client):
     id = capture(plain())
 
-    for tab in ("text", "headers", "source"):
+    for tab in ("text", "headers", "mime", "source"):
         response = client.get(route("sent", id=id) + f"?tab={tab}")
 
         assert (
@@ -650,6 +652,104 @@ def test_download_link_is_on_every_tab(client):
             'title="Download .eml" aria-label="Download .eml">'
             in response.content.decode()
         )
+
+
+def test_neighbour_links_lead_to_the_newer_and_the_older_message(client):
+    oldest = capture(plain("Oldest"))
+    middle = capture(plain("Middle"))
+    newest = capture(plain("Newest"))
+
+    pages = {
+        id: client.get(route("sent", id=id)).content.decode()
+        for id in (oldest, middle, newest)
+    }
+
+    newer = '<a href="{}" rel="prev" class="icon" title="Newer message" aria-label="Newer message">'
+    older = '<a href="{}" rel="next" class="icon" title="Older message" aria-label="Older message">'
+    assert newer.format(route("sent", id=newest)) in pages[middle]
+    assert older.format(route("sent", id=oldest)) in pages[middle]
+    assert older.format(route("sent", id=middle)) in pages[newest]
+    assert newer.format(route("sent", id=middle)) in pages[oldest]
+    # An end of the list keeps the icon, without a link.
+    assert 'rel="prev"' not in pages[newest]
+    assert 'rel="next"' not in pages[oldest]
+    assert (
+        '<span class="icon" aria-disabled="true" title="No newer message">'
+        in pages[newest]
+    )
+    assert (
+        '<span class="icon" aria-disabled="true" title="No older message">'
+        in pages[oldest]
+    )
+    assert "aria-disabled" not in pages[middle]
+
+
+def test_neighbours_of_an_unlisted_message():
+    """A storage whose list leaves the message out: no links rather than an error."""
+    assert views.neighbours([], UNKNOWN_ID) == (None, None)
+
+
+def test_preview_page_has_no_neighbour_links(client):
+    content = client.get(route("preview", **SAMPLE)).content.decode()
+
+    assert 'class="nav"' not in content
+    assert 'rel="prev"' not in content
+    assert 'rel="next"' not in content
+
+
+def test_mime_tab_shows_the_tree(client):
+    id = capture(html())
+
+    response = client.get(route("sent", id=id) + "?tab=mime")
+
+    content = response.content.decode()
+    [section] = re.findall(
+        r'<section class="tab" data-tab="mime">(.*?)</section>', content, re.S
+    )
+    assert current_tab(response) == "mime"
+    assert re.findall(r"<code>([^<]+)</code>", section) == [
+        "multipart/mixed",
+        "multipart/alternative",
+        "text/plain",
+        "text/html",
+        "image/png",
+        "image/svg+xml",
+    ]
+    # Two containers, so two nested lists; a size on each of the four leaves.
+    assert section.count("<ul>") == 2
+    assert section.count('<span class="size">') == 4
+    assert '<span class="label">inline</span>' in section
+    assert '<span class="label">attachment</span>' in section
+    assert '<span class="name">report.svg</span>' in section
+    assert f'<span class="size">{len(SVG)}\xa0bytes</span>' in section
+
+
+def test_copy_buttons_sit_on_the_text_and_source_tabs(client):
+    id = capture(html())
+
+    page = client.get(route("sent", id=id)).content.decode()
+    source = client.get(route("sent", id=id) + "?tab=source").content.decode()
+
+    button = '<button type="button" class="copy">'
+    # Plain text only: the Source pane isn't on the page until asked for.
+    assert page.count(button) == 1
+    assert source.count(button) == 2
+    [text] = re.findall(
+        r'<section class="tab" data-tab="text" hidden>(.*?)</section>', page, re.S
+    )
+    assert button in text
+    assert "<pre>Hi there." in text
+
+
+def test_no_copy_button_without_a_plain_text_part(client):
+    message = EmailMessage("Hi", "<p>Hi</p>", "sender@example.com", ["to@example.com"])
+    message.content_subtype = "html"
+    id = capture(message)
+
+    content = client.get(route("sent", id=id)).content.decode()
+
+    assert 'class="copy"' not in content
+    assert "The message has no plain-text part." in content
 
 
 @pytest.mark.parametrize(

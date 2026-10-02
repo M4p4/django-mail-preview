@@ -6,7 +6,7 @@ from io import BytesIO
 import pytest
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 
-from django_mail_preview.message import BASE, Part, parse, prepare_html
+from django_mail_preview.message import BASE, MimeNode, Part, parse, prepare_html
 from tests.helpers import PNG, inline_image
 
 PDF = b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n"
@@ -235,6 +235,59 @@ def test_empty_body():
     assert parsed.text.strip() == ""
     assert parsed.html is None
     assert parsed.parts == []
+
+
+def test_tree_of_a_plain_message_is_one_leaf():
+    parsed = parse(serialise(plain()))
+
+    assert parsed.text is not None
+    assert parsed.tree == MimeNode(
+        content_type="text/plain",
+        disposition=None,
+        filename=None,
+        size=len(parsed.text.encode()),
+        children=[],
+    )
+
+
+def test_tree_shows_the_containers_and_every_part():
+    message = alternatives()
+    message.attach(inline_image("logo"))
+    message.attach("report.pdf", PDF, "application/pdf")
+
+    parsed = parse(serialise(message))
+
+    mixed = parsed.tree
+    assert (mixed.content_type, mixed.disposition, mixed.filename, mixed.size) == (
+        "multipart/mixed",
+        None,
+        None,
+        None,
+    )
+    alternative, image, pdf = mixed.children
+    assert alternative.content_type == "multipart/alternative"
+    assert alternative.size is None
+    text, html = alternative.children
+    assert parsed.html is not None
+    assert (text.content_type, text.children) == ("text/plain", [])
+    assert (html.content_type, html.size) == ("text/html", len(parsed.html.encode()))
+    assert image == MimeNode("image/png", "inline", None, len(PNG), [])
+    assert pdf == MimeNode("application/pdf", "attachment", "report.pdf", len(PDF), [])
+
+
+def test_tree_keeps_an_attached_message_as_one_leaf():
+    """As in the parts list, so the two agree on what a part is and how big."""
+    message = plain(subject="Fwd: Original")
+    message.attach("original.eml", plain(subject="Original"), "message/rfc822")
+
+    parsed = parse(serialise(message))
+
+    text, attached = parsed.tree.children
+    [part] = parsed.parts
+    assert text.content_type == "text/plain"
+    assert attached == MimeNode(
+        "message/rfc822", "attachment", "original.eml", part.size, []
+    )
 
 
 def test_source_of_a_django_message():

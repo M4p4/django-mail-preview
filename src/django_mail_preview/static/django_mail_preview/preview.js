@@ -1,6 +1,7 @@
 /* Behaviour of the mail preview pages: tabs, the frame's width, the drawer on
-   a phone, folding preview groups, confirmations and the live list. The links
-   and forms work without it; this makes them instant. */
+   a phone, folding preview groups, confirmations, copy buttons, the keyboard
+   and the live list. The links and forms work without it; this makes them
+   instant. */
 (() => {
   document.documentElement.classList.add("js");
 
@@ -131,8 +132,92 @@
     });
   });
 
+  // Copy on the Plain text and Source tabs. Without the clipboard API (a plain
+  // http:// origin other than localhost) the text is selected and copied the
+  // old way, or stays selected for the user to copy.
+  document.querySelectorAll(".copy").forEach((button) => {
+    const pre = button.parentElement.querySelector("pre");
+    const label = button.querySelector("span");
+    const original = label.textContent;
+    let revert = null;
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(pre.textContent);
+        return "Copied";
+      } catch {
+        getSelection().selectAllChildren(pre);
+        return document.execCommand("copy") ? "Copied" : "Selected";
+      }
+    };
+    button.addEventListener("click", async () => {
+      label.textContent = await copy();
+      clearTimeout(revert);
+      revert = setTimeout(() => (label.textContent = original), 1500);
+    });
+  });
+
+  // j and k walk the captured mail. On a message page they open the older and
+  // the newer message through the header's links; on the start page they move
+  // focus down and up the inbox table, where Enter opens the focused row. Keys
+  // typed into a field, and shortcuts with a modifier, are left alone.
+  document.addEventListener("keydown", (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key !== "j" && event.key !== "k") return;
+    if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+    const down = event.key === "j";
+    const link = document.querySelector(down ? '.nav a[rel="next"]' : '.nav a[rel="prev"]');
+    if (link) {
+      location.assign(link.href);
+      return;
+    }
+    const rows = [...document.querySelectorAll(".inbox tbody a")];
+    const at = rows.indexOf(document.activeElement);
+    const next = at < 0 ? rows[down ? 0 : rows.length - 1] : rows[at + (down ? 1 : -1)];
+    if (next) next.focus();
+  });
+
+  // New mail since the page loaded: the count goes in the title and onto the
+  // favicon, the wordmark's tile with a red badge drawn on a canvas.
+  const icon = document.querySelector('link[rel="icon"]');
+  const title = document.title;
+  const favicon = (count) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.fillStyle = "#0f766e";
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 32, 32, 8);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.stroke(new Path2D("M8 23V9l8 9 8-9v14"));
+    ctx.beginPath();
+    ctx.arc(22, 10, 10, 0, 2 * Math.PI);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#dc2626";
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(count > 9 ? "9+" : String(count), 22, 10.5);
+    return canvas.toDataURL("image/png");
+  };
+  const announce = (count) => {
+    document.title = `(${count}) ${title}`;
+    try {
+      icon.href = favicon(count);
+    } catch {
+      // No canvas, or no icon link: the title still carries the count.
+    }
+  };
+
   // The live list: poll for new mail while the tab is visible. The start page
-  // reloads; an open message shows a badge instead, so it isn't pulled away.
+  // reloads; an open message shows a badge and the count instead, so it isn't
+  // pulled away. The count is what arrived since this page loaded.
   const body = document.body;
   const badge = document.querySelector(".badge");
   let timer = null;
@@ -145,8 +230,13 @@
           String(data.count) === body.dataset.count &&
           (data.latest || "") === body.dataset.latest;
         if (unchanged) return;
-        if (body.dataset.page === "index") location.reload();
-        else if (badge) badge.hidden = false;
+        if (body.dataset.page === "index") {
+          location.reload();
+          return;
+        }
+        if (badge) badge.hidden = false;
+        const fresh = data.count - Number(body.dataset.count);
+        if (fresh > 0) announce(fresh);
       })
       .catch(() => {
         // The server is restarting; the next poll will find it.

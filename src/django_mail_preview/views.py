@@ -44,6 +44,7 @@ from django_mail_preview.storage import (
     BaseStorage,
     FileStorage,
     MessageMeta,
+    StoredMessage,
     get_storage,
 )
 
@@ -56,6 +57,7 @@ __all__ = [
     "asset",
     "index",
     "is_allowed",
+    "neighbours",
     "preview",
     "preview_eml",
     "preview_html",
@@ -100,6 +102,7 @@ TABS = (
     ("text", "Plain text"),
     ("source", "Source"),
     ("headers", "Headers"),
+    ("mime", "MIME"),
 )
 
 P = ParamSpec("P")
@@ -183,18 +186,22 @@ def version() -> str:
 
 
 def sidebar(
-    storage: BaseStorage, previews: list[Preview], current: str | None = None
+    storage: BaseStorage,
+    previews: list[Preview],
+    messages: list[StoredMessage],
+    current: str | None = None,
 ) -> dict[str, object]:
     """What every page's sidebar shows: the previews by group, the captured messages newest first, and the storage in use.
 
-    ``current`` is the id of the open preview or message, if any.
+    ``messages`` is the storage's list, taken once per request; ``current`` is
+    the id of the open preview or message, if any.
     """
     groups: dict[str, list[Preview]] = {}
     for preview in previews:
         groups.setdefault(preview.group, []).append(preview)
     return {
         "previews": sorted(groups.items()),
-        "sent": storage.list(),
+        "sent": messages,
         "current": current,
         "storage_label": storage_label(storage),
         "backend_active": backend_is_active(),
@@ -206,6 +213,23 @@ def storage_label(storage: BaseStorage) -> str:
     if isinstance(storage, FileStorage):
         return f"files · {storage.root}"
     return f"{type(storage).__module__}.{type(storage).__qualname__}"
+
+
+def neighbours(messages: list[StoredMessage], id: str) -> tuple[str | None, str | None]:
+    """The ids of the newer and the older neighbour of a message in the list, newest first.
+
+    Ids, never positions, so the links stay right when mail arrives or is
+    deleted in between. Either is ``None`` at that end of the list, both when
+    the message isn't listed.
+    """
+    ids = [stored.meta.id for stored in messages]
+    try:
+        at = ids.index(id)
+    except ValueError:
+        return None, None
+    newer = ids[at - 1] if at > 0 else None
+    older = ids[at + 1] if at + 1 < len(ids) else None
+    return newer, older
 
 
 def captured(storage: BaseStorage, id: str) -> tuple[MessageMeta, bytes]:
@@ -340,7 +364,10 @@ def route(view: str, **kwargs: object) -> str:
 @ensure_csrf_cookie
 def index(request: HttpRequest) -> HttpResponse:
     """The sidebar and, until a message is picked, what to do next."""
-    return render(request, "index.html", sidebar(get_storage(), get_previews()))
+    storage = get_storage()
+    return render(
+        request, "index.html", sidebar(storage, get_previews(), storage.list())
+    )
 
 
 @allowed
@@ -360,6 +387,8 @@ def sent_latest(request: HttpRequest) -> HttpResponse:
 def sent(request: HttpRequest, id: str) -> HttpResponse:
     storage = get_storage()
     meta, raw = captured(storage, id)
+    messages = storage.list()
+    newer, older = neighbours(messages, id)
     return message_page(
         request,
         parse(raw),
@@ -367,10 +396,12 @@ def sent(request: HttpRequest, id: str) -> HttpResponse:
         eml_url=route("sent_eml", id=id),
         part_url=lambda n: route("sent_part", id=id, n=n),
         context={
-            **sidebar(storage, get_previews(), current=id),
+            **sidebar(storage, get_previews(), messages, current=id),
             "meta": meta,
             "bcc": meta.bcc,
             "delete_url": route("sent_delete", id=id),
+            "newer_url": None if newer is None else route("sent", id=newer),
+            "older_url": None if older is None else route("sent", id=older),
         },
     )
 
@@ -425,6 +456,7 @@ def preview(request: HttpRequest, group: str, name: str) -> HttpResponse:
     found = find_preview(previews, group, name)
     message = found.render(request)
     query = query_string(request)
+    storage = get_storage()
     return message_page(
         request,
         parse(serialise(message)),
@@ -432,7 +464,7 @@ def preview(request: HttpRequest, group: str, name: str) -> HttpResponse:
         eml_url=route("preview_eml", group=group, name=name) + query,
         part_url=lambda n: route("preview_part", group=group, name=name, n=n) + query,
         context={
-            **sidebar(get_storage(), previews, current=found.id),
+            **sidebar(storage, previews, storage.list(), current=found.id),
             "preview": found,
             # Only the message object knows them: Bcc is never serialised.
             "bcc": message.bcc,

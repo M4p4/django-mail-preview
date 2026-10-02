@@ -1,0 +1,15 @@
+<li>
+  <span class="row">
+    <code>{{ node.content_type }}</code>
+    {% if node.disposition %}<span class="label">{{ node.disposition }}</span>{% endif %}
+    {% if node.filename %}<span class="name">{{ node.filename }}</span>{% endif %}
+    {% if node.size is not None %}<span class="size">{{ node.size|filesizeformat }}</span>{% endif %}
+  </span>
+  {% if node.children %}
+    <ul>
+      {% for child in node.children %}
+        {% include "django_mail_preview/_mime.html" with node=child %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</li>
