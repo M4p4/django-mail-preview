@@ -37,7 +37,7 @@ from django.views.decorators.http import require_POST, require_safe
 
 from django_mail_preview.backends import serialise
 from django_mail_preview.checks import backend_is_active
-from django_mail_preview.conf import mail_preview_settings
+from django_mail_preview.conf import default_root, mail_preview_settings
 from django_mail_preview.message import ParsedMessage, parse, prepare_html
 from django_mail_preview.registry import Preview, get_previews
 from django_mail_preview.storage import (
@@ -199,20 +199,30 @@ def sidebar(
     groups: dict[str, list[Preview]] = {}
     for preview in previews:
         groups.setdefault(preview.group, []).append(preview)
+    label, path = storage_label(storage)
     return {
         "previews": sorted(groups.items()),
         "sent": messages,
         "current": current,
-        "storage_label": storage_label(storage),
+        "storage_label": label,
+        "storage_path": path,
         "backend_active": backend_is_active(),
     }
 
 
-def storage_label(storage: BaseStorage) -> str:
-    """What the footer says about the storage: its kind, and for files the directory."""
-    if isinstance(storage, FileStorage):
-        return f"files · {storage.root}"
-    return f"{type(storage).__module__}.{type(storage).__qualname__}"
+def storage_label(storage: BaseStorage) -> tuple[str, str | None]:
+    """What the footer says about the storage, and the path for its tooltip.
+
+    The file storage names its directory. In the default one under the temp
+    dir only the last segment shows, the project's hash, and the long path
+    stays in the tooltip; a ``MAIL_PREVIEW_ROOT`` the developer set shows
+    whole. Another storage shows its class and has no path.
+    """
+    if not isinstance(storage, FileStorage):
+        return f"{type(storage).__module__}.{type(storage).__qualname__}", None
+    if storage.root == default_root().resolve():
+        return f"files · {storage.root.name}", str(storage.root)
+    return f"files · {storage.root}", str(storage.root)
 
 
 def neighbours(messages: list[StoredMessage], id: str) -> tuple[str | None, str | None]:

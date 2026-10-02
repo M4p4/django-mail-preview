@@ -16,6 +16,7 @@ from django.urls import reverse
 from django_mail_preview import EmailPreview, views
 from django_mail_preview.backends import EmailBackend
 from django_mail_preview.checks import BACKEND
+from django_mail_preview.conf import default_root
 from django_mail_preview.storage import FileStorage, new_id
 from tests.helpers import LATE_PREVIEWS, PNG, inline_image
 
@@ -172,7 +173,10 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     assert '<span class="clip"' not in rows[1]
     assert "Nothing captured yet." not in content
     assert 'name="csrfmiddlewaretoken"' in content
-    assert f"files · {FileStorage().root}" in content
+    # A directory the developer set shows whole.
+    assert (
+        f'title="{FileStorage().root}">files · {FileStorage().root}</footer>' in content
+    )
 
 
 def test_index_escapes_a_subject_with_markup(client):
@@ -241,7 +245,23 @@ def test_footer_names_a_custom_storage(settings, client):
 
     response = client.get(route("index"))
 
-    assert "tests.test_storage.MemoryStorage" in response.content.decode()
+    assert (
+        '<footer class="storage">tests.test_storage.MemoryStorage</footer>'
+        in response.content.decode()
+    )
+
+
+def test_footer_keeps_the_default_directory_short(settings, client):
+    """The temp path is long and the same on every project; only its hash shows, the path in the tooltip."""
+    del settings.MAIL_PREVIEW_ROOT
+    root = default_root().resolve()
+
+    response = client.get(route("index"))
+
+    assert (
+        f'<footer class="storage" title="{root}">files · {root.name}</footer>'
+        in response.content.decode()
+    )
 
 
 def test_message_page(client):

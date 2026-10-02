@@ -867,7 +867,7 @@ button:hover {
 }
 
 .custom input {
-  width: 5rem;
+  width: 4rem;
   padding: 0.3rem 0.4rem;
   background: var(--bg);
   border: 1px solid var(--border);
