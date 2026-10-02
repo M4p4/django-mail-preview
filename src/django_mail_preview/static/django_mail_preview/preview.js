@@ -1,6 +1,6 @@
-/* Behaviour of the mail preview pages: tabs, width toggle, the drawer on a
-   phone, folding preview groups, confirmations and the live list. The links and
-   forms work without it; this makes them instant. */
+/* Behaviour of the mail preview pages: tabs, the frame's width, the drawer on
+   a phone, folding preview groups, confirmations and the live list. The links
+   and forms work without it; this makes them instant. */
 (() => {
   document.documentElement.classList.add("js");
 
@@ -20,32 +20,48 @@
     });
   });
 
-  // The frame's width: 375, 600 or full, remembered across pages.
-  const frame = document.querySelector('.tab[data-tab="html"]');
-  const widths = document.querySelectorAll(".width button[data-width]");
+  // The frame's width: a preset, a number typed in, or full, remembered across
+  // pages. The field doubles as the readout and always shows what the frame
+  // measures, so "full" and a width the pane cannot fit read as what they are.
+  const frame = document.querySelector('.tab[data-tab="html"] iframe');
+  const presets = document.querySelectorAll(".width button[data-width]");
+  const field = document.querySelector(".width input");
   const WIDTH_KEY = "mail-preview-width";
-  const setWidth = (width) => {
-    frame.dataset.width = width;
-    widths.forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.width === width));
+  let width = "full";
+  const clamp = (n) => Math.min(Math.max(n, Number(field.min)), Number(field.max));
+  const readout = () => {
+    if (document.activeElement !== field) field.value = frame.clientWidth;
+  };
+  const setWidth = (next) => {
+    width = next;
+    frame.style.width = next === "full" ? "" : `${next}px`;
+    presets.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.width === next));
     });
+    readout();
     try {
-      localStorage.setItem(WIDTH_KEY, width);
+      localStorage.setItem(WIDTH_KEY, next);
     } catch {
       // Storage may be unavailable; the choice then lasts for this page only.
     }
   };
-  if (frame && widths.length) {
-    let saved = null;
+  if (frame) {
+    let saved = NaN;
     try {
-      saved = localStorage.getItem(WIDTH_KEY);
+      saved = Number(localStorage.getItem(WIDTH_KEY));
     } catch {
       // See above.
     }
-    setWidth(document.querySelector(`.width [data-width="${saved}"]`) ? saved : "full");
-    widths.forEach((button) => {
+    setWidth(Number.isInteger(saved) && saved > 0 ? String(clamp(saved)) : "full");
+    presets.forEach((button) => {
       button.addEventListener("click", () => setWidth(button.dataset.width));
     });
+    field.addEventListener("change", () => {
+      const typed = Math.round(field.valueAsNumber);
+      field.blur();
+      setWidth(Number.isNaN(typed) ? "full" : String(clamp(typed)));
+    });
+    new ResizeObserver(readout).observe(frame);
   }
 
   // On a phone the sidebar is a drawer behind the Menu button: the scrim and

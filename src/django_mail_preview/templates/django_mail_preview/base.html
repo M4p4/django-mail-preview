@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Mail preview{% endblock %}</title>
+    {# The wordmark's tile as the tab icon. A project CSP without img-src data: just drops it. #}
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230f766e'/><path d='M8 23V9l8 9 8-9v14' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
     <link rel="stylesheet" href="{% url 'mail_preview:asset' name='preview.css' %}?v={{ version }}">
     <script src="{% url 'mail_preview:asset' name='preview.js' %}?v={{ version }}" defer></script>
   </head>
@@ -12,12 +14,12 @@
     <div class="layout">
       {# On a phone the sidebar is a drawer behind this bar's button; the script makes it one. #}
       <header class="topbar">
-        <a href="{% url 'mail_preview:index' %}">Mail preview</a>
+        <span class="brand">{% include "django_mail_preview/_wordmark.html" %}</span>
         <button type="button" class="menu" aria-controls="sidebar" aria-expanded="false">Menu</button>
       </header>
       <div class="scrim" hidden></div>
       <aside class="sidebar" id="sidebar">
-        <h1><a href="{% url 'mail_preview:index' %}">Mail preview</a></h1>
+        <h1 class="brand">{% include "django_mail_preview/_wordmark.html" %}</h1>
         <section class="previews">
           <h2>Previews</h2>
           {% for group, items in previews %}

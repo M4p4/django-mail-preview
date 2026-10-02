@@ -165,7 +165,7 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     assert len(rows) == 2
     assert f'<a href="{route("sent", id=second)}">Second</a>' in rows[0]
     assert '<td class="wide">sender@example.com</td>' in rows[0]
-    assert "<td>to@example.com</td>" in rows[0]
+    assert '<td class="to">to@example.com</td>' in rows[0]
     assert 'title="2 attachments"' in rows[0]
     assert re.search(r'<td class="wide num">[\d.]+\xa0(bytes|KB)</td>', rows[0])
     assert re.search(r'<time datetime="[^"]+">\w{3} \d+, \d\d:\d\d</time>', rows[0])
@@ -258,10 +258,14 @@ def test_message_page(client):
     assert route("sent_eml", id=id) in content
     assert route("sent_delete", id=id) in content
     assert 'name="csrfmiddlewaretoken"' in content
-    # The attachment and, under "Inline", the image without a filename.
+    # The parts: the attachment, and the inline image without a filename.
     assert route("sent_part", id=id, n=1) in content
     assert "report.svg" in content
     assert "part-0" in content
+    assert content.count('<span class="label">inline</span>') == 1
+    # The header: the sender's initial and the date.
+    assert '<span class="avatar" aria-hidden="true">S</span>' in content
+    assert '<time class="date"' in content
     # The open message in the sidebar, and the current tab.
     assert content.count('aria-current="page"') == 2
 
@@ -621,12 +625,18 @@ def test_body_carries_what_the_live_list_compares_with(client):
 
 
 @pytest.mark.parametrize(("build", "shown"), [(html, True), (plain, False)])
-def test_width_toggle_comes_with_the_html_part(client, build, shown):
+def test_frame_toolbar_comes_with_the_html_part(client, build, shown):
     id = capture(build())
 
     response = client.get(route("sent", id=id))
 
-    assert ('aria-label="Frame width"' in response.content.decode()) is shown
+    content = response.content.decode()
+    assert ('aria-label="Frame width"' in content) is shown
+    assert ('aria-label="Width in pixels"' in content) is shown
+    assert (
+        f'<a href="{route("sent_html", id=id)}" target="_blank" rel="noopener"'
+        in content
+    ) is shown
 
 
 def test_download_link_is_on_every_tab(client):
@@ -635,9 +645,38 @@ def test_download_link_is_on_every_tab(client):
     for tab in ("text", "headers", "source"):
         response = client.get(route("sent", id=id) + f"?tab={tab}")
 
-        assert f'<a href="{route("sent_eml", id=id)}">Download .eml</a>' in (
-            response.content.decode()
+        assert (
+            f'<a href="{route("sent_eml", id=id)}" class="icon" '
+            'title="Download .eml" aria-label="Download .eml">'
+            in response.content.decode()
         )
+
+
+@pytest.mark.parametrize(
+    ("sender", "letter"),
+    [
+        ("sender@example.com", "S"),
+        ('"Ada Lovelace" <ada@example.com>', "A"),
+        ("'ops' <ops@example.com>", "O"),
+        ("Émile <emile@example.com>", "É"),
+        ("", "?"),
+    ],
+)
+def test_initial_is_the_first_letter_of_the_sender(sender, letter):
+    assert views.initial(sender) == letter
+
+
+def test_pages_carry_the_wordmark_and_the_favicon(client):
+    content = client.get(route("index")).content.decode()
+
+    assert '<link rel="icon" href="data:image/svg+xml,' in content
+    # Beside the name in the sidebar and in the top bar.
+    assert (
+        content.count(
+            f'<span class="version" title="django-mail-preview {version("django-mail-preview")}">'
+        )
+        == 2
+    )
 
 
 def test_index_explains_how_to_add_previews_until_there_are_some(
@@ -717,9 +756,9 @@ def test_preview_page(client, name, subject, tab):
     assert f"<code>tests.{name}</code>" in content
     assert route("preview_eml", group="tests", name=name) in content
     assert current_tab(response) == tab
-    # The open preview in the sidebar, and the current tab; no Date, no Delete.
+    # The open preview in the sidebar, and the current tab; no date, no Delete.
     assert content.count('aria-current="page"') == 2
-    assert "<dt>Date</dt>" not in content
+    assert '<time class="date"' not in content
     assert 'data-confirm="Delete this message?"' not in content
 
 
@@ -744,15 +783,13 @@ def test_preview_page_lists_the_parts(client):
 def test_preview_page_shows_the_docstring(client, name, description):
     response = client.get(route("preview", group="tests", name=name))
 
-    content = response.content.decode()
-    assert "<dt>Description</dt>" in content
-    assert f"<dd>{description}</dd>" in content
+    assert f'<p class="description">{description}</p>' in response.content.decode()
 
 
-def test_preview_without_a_docstring_has_no_description_row(client):
+def test_preview_without_a_docstring_has_no_description(client):
     response = client.get(route("preview", group="tests", name="plain"))
 
-    assert "<dt>Description</dt>" not in response.content.decode()
+    assert 'class="description"' not in response.content.decode()
 
 
 def test_preview_page_shows_bcc(client):
@@ -770,7 +807,7 @@ def test_preview_page_shows_bcc(client):
 
     response = client.get(route("preview", group="copies", name="blind"))
 
-    assert "<dd>bcc@example.com</dd>" in response.content.decode()
+    assert "<span>bcc bcc@example.com</span>" in response.content.decode()
 
 
 def test_params_reach_the_preview(client):
