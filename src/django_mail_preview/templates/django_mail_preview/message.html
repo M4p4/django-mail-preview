@@ -27,6 +27,21 @@
             {% if meta.alias %}<span class="mailer">via {{ meta.alias }}</span>{% endif %}
           {% endif %}
           <div class="actions">
+            {% if meta %}
+              {# The neighbours in the list, by id; j and k follow them. An end of the list is a dimmed icon without a link. #}
+              <span class="nav">
+                {% if newer_url %}
+                  <a href="{{ newer_url }}" rel="prev" class="icon" title="Newer message" aria-label="Newer message"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+                {% else %}
+                  <span class="icon" aria-disabled="true" title="No newer message"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></span>
+                {% endif %}
+                {% if older_url %}
+                  <a href="{{ older_url }}" rel="next" class="icon" title="Older message" aria-label="Older message"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></a>
+                {% else %}
+                  <span class="icon" aria-disabled="true" title="No older message"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></span>
+                {% endif %}
+              </span>
+            {% endif %}
             <a href="{{ eml_url }}" class="icon" title="Download .eml" aria-label="Download .eml"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg></a>
             {% if delete_url %}
               <form method="post" action="{{ delete_url }}" data-confirm="Delete this message?">
@@ -67,9 +82,13 @@
         <p class="empty">The message has no HTML part.</p>
       {% endif %}
     </section>
+    {# Copy needs the script and shows once it has run. #}
     <section class="tab" data-tab="text"{% if tab != "text" %} hidden{% endif %}>
       {% if parsed.text is not None %}
-        <pre>{{ parsed.text }}</pre>
+        <div class="copyable">
+          <button type="button" class="copy"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span></button>
+          <pre>{{ parsed.text }}</pre>
+        </div>
       {% else %}
         <p class="empty">The message has no plain-text part.</p>
       {% endif %}
@@ -77,7 +96,10 @@
     {# The source carries every attachment base64-encoded, so it is only on the page when asked for; the Source tab then navigates rather than switching in place. #}
     {% if tab == "source" %}
       <section class="tab" data-tab="source">
-        <pre>{{ parsed.source }}</pre>
+        <div class="copyable">
+          <button type="button" class="copy"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span></button>
+          <pre>{{ parsed.source }}</pre>
+        </div>
       </section>
     {% endif %}
     <section class="tab" data-tab="headers"{% if tab != "headers" %} hidden{% endif %}>
@@ -89,6 +111,11 @@
           </tr>
         {% endfor %}
       </table>
+    </section>
+    <section class="tab" data-tab="mime"{% if tab != "mime" %} hidden{% endif %}>
+      <ul class="mime">
+        {% include "django_mail_preview/_mime.html" with node=parsed.tree %}
+      </ul>
     </section>
     {% if parts %}
       <section class="parts">

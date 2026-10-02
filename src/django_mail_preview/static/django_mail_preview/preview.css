@@ -171,6 +171,37 @@ button:hover {
   height: 18px;
 }
 
+.icon[aria-disabled="true"],
+.icon[aria-disabled="true"]:hover {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--muted);
+  opacity: 0.45;
+}
+
+/* Newer and Older: a joined pair. */
+
+.nav {
+  display: inline-flex;
+}
+
+.nav .icon + .icon {
+  margin-left: -1px;
+}
+
+.nav .icon:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.nav .icon:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.nav .icon:hover {
+  position: relative;
+  z-index: 1;
+}
+
 /* The wordmark: a tile beside the name, the version in muted text. */
 
 .brand {
@@ -732,6 +763,37 @@ button:hover {
   border-radius: var(--radius);
 }
 
+/* Copy sits over the top right corner of the text it copies; it needs the
+   script and shows once it has run. */
+
+.copyable {
+  position: relative;
+}
+
+.copyable pre {
+  padding-right: 6rem;
+}
+
+.copy {
+  display: none;
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.js .copy {
+  display: inline-flex;
+}
+
+.copy:hover {
+  color: var(--fg);
+}
+
 /* The frame's toolbar: the width presets and the field on the left, the link
    on the right. The width controls need the script and show once it has run. */
 
@@ -805,7 +867,7 @@ button:hover {
 }
 
 .custom input {
-  width: 5rem;
+  width: 4rem;
   padding: 0.3rem 0.4rem;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -907,7 +969,7 @@ th {
   color: var(--muted);
 }
 
-.parts .label {
+.label {
   padding: 0 var(--space-2);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -918,4 +980,39 @@ th {
 .parts .size {
   margin-left: auto;
   white-space: nowrap;
+}
+
+/* MIME tab: the tree as nested lists, a line down the side of each container. */
+
+.mime,
+.mime ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mime ul {
+  margin-left: 0.45rem;
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+.mime li {
+  padding: 0.3rem 0;
+}
+
+.mime .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.mime .name {
+  overflow-wrap: anywhere;
+}
+
+.mime .size {
+  font-size: 0.9em;
+  color: var(--muted);
 }

@@ -70,7 +70,7 @@
             <p class="empty">Nothing captured yet.</p>
           {% endif %}
         </section>
-        <footer class="storage">{{ storage_label }}</footer>
+        <footer class="storage"{% if storage_path %} title="{{ storage_path }}"{% endif %}>{{ storage_label }}</footer>
       </aside>
       <main class="pane">
         {% block pane %}{% endblock %}
