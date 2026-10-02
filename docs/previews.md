@@ -89,7 +89,7 @@ preview's URL to build a variant:
 ```python
 class OrderEmails(EmailPreview):
     def receipt(self):
-        """``?items=`` sets how many items the sample order has, one unless given."""
+        """Takes ?items= for the number of items in the sample order, one unless given."""
         count = int(self.params.get("items", 1))
         return receipt_email(sample_order(items=count))
 ```
