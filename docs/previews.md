@@ -1,8 +1,8 @@
 # Previews
 
-A preview builds an email from sample data and shows it without sending it, the way
-Rails mailer previews do. Previews live in a `previews.py` in any installed app and
-appear in the sidebar, grouped by app.
+A preview builds an email from sample data and shows it without sending it. Previews
+live in a `previews.py` in any installed app and appear in the sidebar, grouped by
+app.
 
 ## Writing previews
 

@@ -8,9 +8,9 @@
 See every email your Django app sends, rendered in the browser, without sending a
 single one.
 
-Rails has had mailer previews for years. In Django you read raw MIME in the console or
-send real mail to a test inbox. django-mail-preview puts both halves on one page inside
-your project: a capture email backend stores the mail your app sends, and preview
+Checking email in a Django project usually means reading raw MIME in the console or
+sending real mail to a test inbox. django-mail-preview gives you one page inside the
+project instead: a capture email backend stores the mail your app sends, and preview
 classes build emails from sample data without sending them. The page answers 404
 unless `DEBUG` is on, needs no `staticfiles`, and adds no models or migrations. Django
 is the only dependency.
