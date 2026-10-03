@@ -231,9 +231,8 @@ html:not(.js) .theme {
   z-index: 1;
 }
 
-/* The wordmark: an outlined tile beside the name in mono, as it is typed, with
-   the dot in the accent. The favicon keeps the filled tile, which an outline
-   would lose at 16 px. */
+/* The wordmark: an outlined tile beside the name. The favicon keeps the
+   filled tile, which an outline would lose at 16 px. */
 
 .brand {
   display: flex;
@@ -247,14 +246,8 @@ html:not(.js) .theme {
   align-items: center;
   gap: var(--space-2);
   color: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-weight: 600;
-  letter-spacing: -0.01em;
   text-decoration: none;
-}
-
-.wordmark .dot {
-  color: var(--accent);
 }
 
 .mark {
@@ -441,7 +434,9 @@ html:not(.js) .theme {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  margin-bottom: 1.25rem;
+  /* A notch under the section gap: the theme button is taller than the name,
+     so the name sits above the block's edge and the gap under it reads larger. */
+  margin-bottom: 1rem;
 }
 
 .sidebar h1 {
@@ -821,6 +816,59 @@ a.tag:hover {
 
 .inbox {
   margin-top: var(--space-3);
+  table-layout: fixed;
+}
+
+/* The subject matters most, so every other column has a set width and the
+   subject takes the rest, breaking anywhere. The recipients wrap onto more
+   lines, between addresses first and inside one only when it alone is wider
+   than the column. A sender's name stays on one line; one wider than the
+   column is cut with an ellipsis, and the cell's tooltip has the whole
+   header. The addresses are a step smaller than the subject. */
+
+.inbox th.from {
+  width: 10rem;
+}
+
+.inbox th.to {
+  width: 25%;
+}
+
+.inbox th.paperclip {
+  width: 2.25rem;
+}
+
+.inbox th.num {
+  width: 6rem;
+}
+
+.inbox th.time {
+  width: 8rem;
+}
+
+.inbox td:first-child {
+  overflow-wrap: anywhere;
+}
+
+.inbox td.from,
+.inbox td.to {
+  font-size: 0.9em;
+}
+
+.inbox td.to {
+  overflow-wrap: anywhere;
+}
+
+.inbox td.from {
+  white-space: nowrap;
+}
+
+.inbox td.from .name {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .inbox th {
@@ -832,16 +880,13 @@ a.tag:hover {
   background: var(--hover);
 }
 
-/* Addresses break between recipients, never inside one, and a subject may
-   break anywhere. From and size go first when the pane narrows. */
+/* The page breaks long words anywhere; the cells above say where they may. */
 
 .inbox td {
   overflow-wrap: normal;
 }
 
-.inbox td:first-child {
-  overflow-wrap: anywhere;
-}
+/* From and size go first when the pane narrows, so the subject keeps its room. */
 
 .inbox .num {
   text-align: right;
@@ -858,9 +903,13 @@ a.tag:hover {
   color: var(--muted);
 }
 
-@media (max-width: 64rem) {
+@media (max-width: 72rem) {
   .inbox .wide {
     display: none;
+  }
+
+  .inbox th.to {
+    width: 30%;
   }
 }
 
@@ -891,6 +940,7 @@ a.tag:hover {
     border: 0;
   }
 
+
   .inbox td.paperclip {
     grid-column: 2;
   }
@@ -904,7 +954,6 @@ a.tag:hover {
     grid-column: 1 / -1;
     font-size: 0.9em;
     color: var(--muted);
-    overflow-wrap: anywhere;
   }
 }
 

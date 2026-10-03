@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from email.utils import parseaddr
 
 from django import template
 from django.utils import timezone
 
-__all__ = ["UNITS", "ago", "register"]
+__all__ = ["UNITS", "ago", "register", "sender"]
 
 register = template.Library()
 
@@ -38,3 +39,14 @@ def ago(then: datetime, now: datetime | None = None) -> str:
         count = seconds // size
         words = f"{count} {unit}{'' if count == 1 else 's'} ago"
     return words
+
+
+@register.filter
+def sender(value: str) -> str:
+    """The display name of an address, or the address itself when it has none.
+
+    ``Scratch <orders@example.com>`` reads "Scratch" in the table, the way Mailpit
+    shows it; the whole header stays in the cell's tooltip.
+    """
+    name, address = parseaddr(value)
+    return name or address or value

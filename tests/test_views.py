@@ -159,6 +159,19 @@ def test_allow_callable_replaces_the_debug_rule(settings, client, debug):
     assert allowed.status_code == 200
 
 
+def test_table_shows_the_sender_name_with_the_address_in_the_tooltip(client):
+    capture(
+        EmailMessage("Hi", "Hi.", "Scratch <orders@example.com>", ["to@example.com"])
+    )
+
+    content = client.get(route("index")).content.decode()
+
+    assert (
+        '<td class="from wide" title="Scratch &lt;orders@example.com&gt;"><span class="name">Scratch</span></td>'
+        in content
+    )
+
+
 def test_index_lists_captured_mail_as_a_table_newest_first(client):
     first = capture(plain("First"))
     second = capture(html("Second"))
@@ -175,7 +188,10 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     rows = re.findall(r"<tr>\s*<td>(.*?)</tr>", content, re.S)
     assert len(rows) == 2
     assert f'<a href="{route("sent", id=second)}">Second</a>' in rows[0]
-    assert '<td class="from wide">sender@example.com</td>' in rows[0]
+    assert (
+        '<td class="from wide" title="sender@example.com"><span class="name">sender@example.com</span></td>'
+        in rows[0]
+    )
     assert '<td class="to">to@example.com</td>' in rows[0]
     assert 'title="2 attachments"' in rows[0]
     assert re.search(r'<td class="wide num">[\d.]+\xa0(bytes|KB)</td>', rows[0])
@@ -422,7 +438,7 @@ def test_message_page(client):
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert "<title>Welcome · mail.preview</title>" in content
+    assert "<title>Welcome · Mail Preview</title>" in content
     for address in ("sender", "to", "cc", "bcc", "reply"):
         assert f"{address}@example.com" in content
     assert f'<iframe src="{route("sent_html", id=id)}"' in content
@@ -978,12 +994,8 @@ def test_pages_carry_the_wordmark_and_the_favicon(client):
     assert '<link rel="icon" href="data:image/svg+xml,' in content
     # In the sidebar and in the top bar, without a version number beside the name.
     assert content.count('class="wordmark"') == 2
-    # The name as it is typed, with the dot in the accent, and an outlined tile.
-    assert (
-        content.count('<span class="name">mail<span class="dot">.</span>preview</span>')
-        == 2
-    )
-    assert "<title>mail.preview</title>" in content
+    assert content.count('<span class="name">Mail Preview</span>') == 2
+    assert "<title>Mail Preview</title>" in content
     assert 'class="version"' not in content
     assert version("django-mail-preview") not in content.replace(
         f"?v={version('django-mail-preview')}", ""
@@ -1062,7 +1074,7 @@ def test_preview_page(client, name, subject, tab):
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert f"<title>{subject} · mail.preview</title>" in content
+    assert f"<title>{subject} · Mail Preview</title>" in content
     assert "noreply@example.com" in content
     assert "ada@example.com" in content
     assert f"<code>tests.{name}</code>" in content
@@ -1126,8 +1138,8 @@ def test_params_reach_the_preview(client):
     english = client.get(route("preview", group="tests", name="greeting"))
     german = client.get(route("preview", group="tests", name="greeting") + "?lang=de")
 
-    assert "<title>Hello Ada · mail.preview</title>" in english.content.decode()
-    assert "<title>Hallo Ada · mail.preview</title>" in german.content.decode()
+    assert "<title>Hello Ada · Mail Preview</title>" in english.content.decode()
+    assert "<title>Hallo Ada · Mail Preview</title>" in german.content.decode()
 
 
 def test_params_are_passed_on_to_the_frame_and_the_downloads(client):
@@ -1294,4 +1306,4 @@ def test_previews_module_created_after_start_appears_on_the_next_request(
     assert "lateapp.welcome" not in before.content.decode()
     assert "lateapp.welcome" in after.content.decode()
     assert page.status_code == 200
-    assert "<title>Late · mail.preview</title>" in page.content.decode()
+    assert "<title>Late · Mail Preview</title>" in page.content.decode()

@@ -4,7 +4,7 @@ requires = [ "setuptools>=77" ]
 
 [project]
 name = "django-mail-preview"
-version = "0.2.1"
+version = "0.2.2"
 description = "A dev inbox and email previews for Django."
 readme = "README.md"
 keywords = [ "development", "django", "email", "inbox", "preview" ]
