@@ -21,8 +21,9 @@ backend for the whole run, so `mail.outbox` works as before. See [Limits](limits
 
 The sidebar lists the previews grouped by app, then the captured messages newest
 first under "Inbox" with their count. The start page shows the captured mail as a
-table with the subject, sender, recipients, an attachment count, the size and the
-time. While nothing is captured it shows the one command that changes that: the
+table with the subject, sender, recipients, an attachment count, the size and how long
+ago the message arrived, "just now", "4 minutes ago", "2 days ago", with the exact
+time in a tooltip. While nothing is captured it shows the one command that changes that: the
 setting that points the project at the capture backend, or, once that is active, a
 `manage.py shell` one-liner that sends a message. A project without previews gets a
 link to the [previews guide](previews.md). On a phone the sidebar sits behind a Menu
@@ -127,7 +128,9 @@ dropped, and sorted. Previews get no tags; they're grouped by app already.
 The page polls for new mail every three seconds while its tab is visible. On the
 start page, new mail reloads the list. With a message open, a "New mail" badge appears
 in the sidebar instead, and the number of messages that arrived since the page loaded
-shows in the tab's title and on the favicon.
+shows in the tab's title and on the favicon. The "4 minutes ago" wording in the table
+keeps up while the tab is visible, so a page left open doesn't say "just now" an hour
+later.
 
 ## Deleting
 

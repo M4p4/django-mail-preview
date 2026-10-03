@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The inbox table says how long ago a message arrived, "just now", "4 minutes ago", "2 days ago", instead of the date and time. The exact time is in a tooltip, and the wording keeps up while the page is open. The sidebar and the message page are unchanged.
 - Tags on captured mail. They come from the message's `X-Tags` header, comma separated as Mailpit reads it, from a function named by the new `MAIL_PREVIEW_TAGS` setting, and, with `MAIL_PREVIEW_PLUS_ADDRESSING`, from the part after `+` in a recipient's address. They show as chips after the subject in the table, on the sidebar rows and on the message page, a row under the Inbox heading lists them with counts, a click on a chip filters the table, and `tag:` is a search operator. `MessageMeta` gains a `tags` field, and the checks `django_mail_preview.E005` and `E006` report the two settings when they can't be used.
 - A search box beside the Inbox heading filters the table as you type. A word matches the subject and the addresses, `from:`, `to:` and `subject:` narrow it to one field, `has:attachment` keeps messages with attachments, and a leading `-` excludes. `/` focuses the box from any page, Escape clears it, and the query stays in the URL.
 - A sun or moon button beside the name switches the pages between light and dark. The choice is kept in the browser and applied before the page paints; the email in the frame keeps the system's scheme.

@@ -1,4 +1,5 @@
 {% extends "django_mail_preview/base.html" %}
+{% load mail_preview %}
 
 {% block pane %}
   <section class="start">
@@ -44,7 +45,7 @@
                 {% endif %}
               </td>
               <td class="wide num">{{ item.meta.size|filesizeformat }}</td>
-              <td><time datetime="{{ item.meta.date|date:'c' }}">{{ item.meta.date|date:'M j, H:i' }}</time></td>
+              <td><time class="ago" datetime="{{ item.meta.date|date:'c' }}" title="{{ item.meta.date|date:'DATETIME_FORMAT' }}">{{ item.meta.date|ago }}</time></td>
             </tr>
           {% endfor %}
         </tbody>

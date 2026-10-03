@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from base64 import b64encode
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from importlib.metadata import version
 from unittest.mock import Mock
 
@@ -179,7 +179,9 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     assert '<td class="to">to@example.com</td>' in rows[0]
     assert 'title="2 attachments"' in rows[0]
     assert re.search(r'<td class="wide num">[\d.]+\xa0(bytes|KB)</td>', rows[0])
-    assert re.search(r'<time datetime="[^"]+">\w{3} \d+, \d\d:\d\d</time>', rows[0])
+    assert re.search(
+        r'<time class="ago" datetime="[^"]+" title="[^"]+">just now</time>', rows[0]
+    )
     assert '<span class="clip"' not in rows[1]
     assert "Nothing captured yet." not in content
     assert 'name="csrfmiddlewaretoken"' in content
@@ -334,6 +336,26 @@ def test_sidebar_shows_the_time_for_today_and_the_date_for_older_mail(client):
     assert ">Jan 2</time>" in content
     # The paperclip only shows with attachments: neither message has any.
     assert '<span class="clip"' not in content
+
+
+def test_table_says_how_long_ago_mail_arrived_and_the_sidebar_does_not(client):
+    storage = FileStorage()
+    capture(plain("Recent"))
+    recent = storage.list()[0].meta
+    then = datetime.now(timezone.utc) - timedelta(days=3, hours=2)
+    old = replace(recent, id=new_id(then), subject="Old", date=then)
+    storage.add(b"Subject: Old\r\n\r\nHi.\r\n", old)
+
+    content = client.get(route("index")).content.decode()
+
+    # Once each: the table cell, with the exact time in its tooltip. The
+    # sidebar keeps the time of day or the date.
+    assert content.count(">just now</time>") == 1
+    assert content.count(">3 days ago</time>") == 1
+    assert re.search(
+        r'<time class="ago" datetime="[^"]+" title="[^"]+">3 days ago</time>', content
+    )
+    assert 'class="ago"' not in content.split('<main class="pane">')[0]
 
 
 def test_sidebar_shows_the_attachment_count(client):

@@ -336,6 +336,46 @@
     if (next) next.focus();
   });
 
+  // The table says how long ago each message arrived. The server wrote the
+  // words; these are the same steps, and they rewrite every time element
+  // from its datetime attribute twice a minute while the tab is visible and
+  // once more when the tab comes back, so a page left open doesn't still say
+  // "just now" an hour later.
+  const UNITS = [
+    ["minute", 60],
+    ["hour", 60 * 60],
+    ["day", 24 * 60 * 60],
+    ["week", 7 * 24 * 60 * 60],
+    ["month", 30 * 24 * 60 * 60],
+    ["year", 365 * 24 * 60 * 60],
+  ];
+  const ago = (then) => {
+    const seconds = Math.trunc((Date.now() - then) / 1000);
+    let words = "just now";
+    for (const [unit, size] of UNITS) {
+      if (seconds < size) break;
+      const count = Math.floor(seconds / size);
+      words = `${count} ${unit}${count === 1 ? "" : "s"} ago`;
+    }
+    return words;
+  };
+  const ages = document.querySelectorAll("time.ago");
+  const refresh = () => {
+    ages.forEach((time) => {
+      time.textContent = ago(Date.parse(time.dateTime));
+    });
+  };
+  let ticker = null;
+  const tick = () => {
+    clearInterval(ticker);
+    ticker = null;
+    if (document.visibilityState !== "visible") return;
+    refresh();
+    ticker = setInterval(refresh, 30000);
+  };
+  document.addEventListener("visibilitychange", tick);
+  tick();
+
   // New mail since the page loaded: the count goes in the title and onto the
   // favicon, the wordmark's tile with a red badge drawn on a canvas.
   const icon = document.querySelector('link[rel="icon"]');
