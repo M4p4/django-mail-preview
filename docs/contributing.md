@@ -52,6 +52,31 @@ throwaway project is enough: `django-admin startproject`, the three lines from t
 [quickstart](index.md#quickstart), a `previews.py` in an app, and a few messages sent
 from `manage.py shell`.
 
+## Releases
+
+Releases are published to PyPI by the CI workflow when a version tag is pushed. To
+make one:
+
+1. In a pull request, set the new version in `pyproject.toml`, rename the entries
+   under `## Unreleased` in `CHANGELOG.md` to a `## X.Y.Z (YYYY-MM-DD)` section with
+   an empty `## Unreleased` heading kept on top, and run `uv lock` so the lock file
+   carries the new version.
+2. After the merge, tag the merge commit on `main` with the bare version and push the
+   tag:
+
+   ```console
+   $ git switch main && git pull
+   $ git tag 0.1.0
+   $ git push origin 0.1.0
+   ```
+
+CI runs every check on the tag. When they all pass, the Release job waits for a
+maintainer to approve the `release` environment, makes sure the tag matches the version
+in the built wheel, and publishes the same files to PyPI with
+[trusted publishing](https://docs.pypi.org/trusted-publishers/). Nothing is rebuilt,
+and no PyPI token is stored in the repository. The Docs workflow then builds `stable`
+from the new tag.
+
 ## Documentation builds
 
 The Docs workflow asks Read the Docs to build the documentation: `latest` on every
