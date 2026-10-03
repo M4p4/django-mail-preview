@@ -125,6 +125,21 @@
     });
   });
 
+  // The open message or preview stays in view in the sidebar: each page load
+  // scrolls the list it is in, so walking the mail with the header's links or
+  // with j and k keeps the selection in the middle of the list. Only the lists
+  // scroll, never the window.
+  for (let item = document.querySelector('.sidebar li[aria-current="page"]'); item; ) {
+    let box = item.parentElement;
+    while (box && !/auto|scroll/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+    if (!box) break;
+    const offset = item.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    if (offset < 0 || offset + item.offsetHeight > box.clientHeight) {
+      box.scrollTop += offset - (box.clientHeight - item.offsetHeight) / 2;
+    }
+    item = box;
+  }
+
   // Delete and Clear all ask first.
   document.querySelectorAll("form[data-confirm]").forEach((form) => {
     form.addEventListener("submit", (event) => {
