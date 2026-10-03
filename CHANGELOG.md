@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A search box beside the Inbox heading filters the table as you type. A word matches the subject and the addresses, `from:`, `to:` and `subject:` narrow it to one field, `has:attachment` keeps messages with attachments, and a leading `-` excludes. `/` focuses the box from any page, Escape clears it, and the query stays in the URL.
 - A sun or moon button beside the name switches the pages between light and dark. The choice is kept in the browser and applied before the page paints; the email in the frame keeps the system's scheme.
 - The sidebar's storage footer is gone. The Inbox heading shows the directory, or the storage class, in a tooltip.
 - The start page without captured mail is an empty-inbox screen with one copyable command: the setting that points the project at the capture backend, or, once that is active, a `manage.py shell` one-liner that sends a message. A project without previews gets a link to the previews guide instead of a code sample.

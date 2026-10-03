@@ -164,7 +164,7 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     rows = re.findall(r"<tr>\s*<td>(.*?)</tr>", content, re.S)
     assert len(rows) == 2
     assert f'<a href="{route("sent", id=second)}">Second</a>' in rows[0]
-    assert '<td class="wide">sender@example.com</td>' in rows[0]
+    assert '<td class="from wide">sender@example.com</td>' in rows[0]
     assert '<td class="to">to@example.com</td>' in rows[0]
     assert 'title="2 attachments"' in rows[0]
     assert re.search(r'<td class="wide num">[\d.]+\xa0(bytes|KB)</td>', rows[0])
@@ -175,6 +175,28 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     # Where the mail lives is a tooltip on the heading, not a line of its own.
     assert f'<h2 title="Stored in {FileStorage().root}">' in content
     assert "<footer" not in content
+
+
+def test_index_has_the_search_box_with_its_operators(client):
+    capture(plain())
+
+    content = client.get(route("index")).content.decode()
+
+    assert '<form class="search" role="search">' in content
+    assert (
+        '<input type="search" name="q" id="q" value="" '
+        'placeholder="Search · from: to: subject: has:attachment"' in content
+    )
+    assert '<button type="button" class="clear"' in content
+    assert '<p class="nomatch" hidden>No messages match.</p>' in content
+
+
+def test_index_prefills_the_search_box_from_the_url(client):
+    capture(plain())
+
+    content = client.get(route("index"), {"q": 'from:"a" <b>'}).content.decode()
+
+    assert 'value="from:&quot;a&quot; &lt;b&gt;"' in content
 
 
 def test_index_escapes_a_subject_with_markup(client):
@@ -190,6 +212,7 @@ def test_index_without_mail_shows_the_empty_inbox_instead_of_the_table(client):
     content = client.get(route("index")).content.decode()
 
     assert "<table" not in content
+    assert 'class="search"' not in content
     assert "<h1>Your inbox is empty</h1>" in content
     assert '<button type="button" class="copy">' in content
     # The storage lives in the heading's tooltip only.

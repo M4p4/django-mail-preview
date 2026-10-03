@@ -380,6 +380,8 @@ def index(request: HttpRequest) -> HttpResponse:
     context = sidebar(storage, get_previews(), storage.list())
     # The empty page's settings hint: MAILERS from Django 6.1, EMAIL_BACKEND before.
     context["mailers"] = django.VERSION >= (6, 1)
+    # The search box's value, so a reload for new mail keeps the query.
+    context["query"] = request.GET.get("q", "")
     return render(request, "index.html", context)
 
 

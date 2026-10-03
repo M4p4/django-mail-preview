@@ -211,6 +211,88 @@
     });
   });
 
+  // The search box on the start page filters the table as the query is typed,
+  // over the rows the page has. A word matches the subject, the sender and
+  // the recipients; from:, to: and subject: narrow it to one field;
+  // has:attachment keeps messages with attachments; a leading - excludes.
+  // Terms are matched anywhere in the text, case apart, and every term must
+  // hold. The query is mirrored into the URL, so the reload for new mail
+  // keeps it, and the box keeps its focus across that reload through #search.
+  const search = document.querySelector(".search");
+  const query = search && search.querySelector("input");
+  if (search) {
+    const clear = search.querySelector(".clear");
+    const count = document.querySelector(".start h1 .count");
+    const nomatch = document.querySelector(".nomatch");
+    const rows = [...document.querySelectorAll(".inbox tbody tr")].map((row) => ({
+      row,
+      subject: row.querySelector("td").textContent.toLowerCase(),
+      from: row.querySelector("td.from").textContent.toLowerCase(),
+      to: row.querySelector("td.to").textContent.toLowerCase(),
+      attachment: Boolean(row.querySelector(".clip")),
+    }));
+    const parse = (text) =>
+      text
+        .toLowerCase()
+        .split(/\s+/)
+        .flatMap((word) => {
+          const not = word.startsWith("-");
+          const term = not ? word.slice(1) : word;
+          const match = /^(from|to|subject|has):(.*)$/.exec(term);
+          const value = match ? match[2] : term;
+          return value ? [{ not, field: match && match[1], value }] : [];
+        });
+    const holds = (item, { field, value }) => {
+      if (field === "has") return value === "attachment" && item.attachment;
+      if (field) return item[field].includes(value);
+      return item.subject.includes(value) || item.from.includes(value) || item.to.includes(value);
+    };
+    const apply = () => {
+      const terms = parse(query.value);
+      let shown = 0;
+      rows.forEach((item) => {
+        const on = terms.every((term) => holds(item, term) !== term.not);
+        item.row.hidden = !on;
+        if (on) shown += 1;
+      });
+      count.textContent = terms.length ? `${shown} of ${rows.length}` : String(rows.length);
+      nomatch.hidden = shown > 0;
+      clear.hidden = !query.value;
+      const url = new URL(location.href);
+      if (query.value.trim()) url.searchParams.set("q", query.value.trim());
+      else url.searchParams.delete("q");
+      history.replaceState(null, "", url);
+    };
+    query.addEventListener("input", apply);
+    query.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      query.value = "";
+      apply();
+      query.blur();
+    });
+    clear.addEventListener("click", () => {
+      query.value = "";
+      apply();
+      query.focus();
+    });
+    search.addEventListener("submit", (event) => event.preventDefault());
+    apply();
+    if (location.hash === "#search") {
+      query.focus();
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }
+
+  // / focuses the search box; from a message page it opens the start page
+  // with the box focused. The wordmark links there on every page.
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "/" || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+    event.preventDefault();
+    if (query) query.focus();
+    else location.assign(`${document.querySelector(".sidebar .wordmark").href}#search`);
+  });
+
   // j and k walk the captured mail. On a message page they open the older and
   // the newer message through the header's links; on the start page they move
   // focus down and up the inbox table, where Enter opens the focused row. Keys
@@ -225,7 +307,7 @@
       location.assign(link.href);
       return;
     }
-    const rows = [...document.querySelectorAll(".inbox tbody a")];
+    const rows = [...document.querySelectorAll(".inbox tbody tr:not([hidden]) a")];
     const at = rows.indexOf(document.activeElement);
     const next = at < 0 ? rows[down ? 0 : rows.length - 1] : rows[at + (down ? 1 : -1)];
     if (next) next.focus();
@@ -286,6 +368,7 @@
           (data.latest || "") === body.dataset.latest;
         if (unchanged) return;
         if (body.dataset.page === "index") {
+          if (query && document.activeElement === query) location.hash = "search";
           location.reload();
           return;
         }
