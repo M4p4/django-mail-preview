@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The browser tab says `Mail Preview` again; the sidebar keeps the `mail.preview` wordmark.
+- The name beside the tile and in the browser tab is `Mail Preview` again, in the pages' own font; the tile stays outlined. The gap under the name in the sidebar is a little tighter.
 
 ## 0.2.1 (2026-10-03)
 

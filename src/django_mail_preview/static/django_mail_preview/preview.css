@@ -231,9 +231,8 @@ html:not(.js) .theme {
   z-index: 1;
 }
 
-/* The wordmark: an outlined tile beside the name in mono, as it is typed, with
-   the dot in the accent. The favicon keeps the filled tile, which an outline
-   would lose at 16 px. */
+/* The wordmark: an outlined tile beside the name. The favicon keeps the
+   filled tile, which an outline would lose at 16 px. */
 
 .brand {
   display: flex;
@@ -247,14 +246,8 @@ html:not(.js) .theme {
   align-items: center;
   gap: var(--space-2);
   color: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-weight: 600;
-  letter-spacing: -0.01em;
   text-decoration: none;
-}
-
-.wordmark .dot {
-  color: var(--accent);
 }
 
 .mark {
@@ -441,7 +434,9 @@ html:not(.js) .theme {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  margin-bottom: 1.25rem;
+  /* A notch under the section gap: the theme button is taller than the name,
+     so the name sits above the block's edge and the gap under it reads larger. */
+  margin-bottom: 1rem;
 }
 
 .sidebar h1 {
