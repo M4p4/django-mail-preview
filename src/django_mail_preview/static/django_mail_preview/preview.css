@@ -202,7 +202,7 @@ button:hover {
   z-index: 1;
 }
 
-/* The wordmark: a tile beside the name, the version in muted text. */
+/* The wordmark: a tile beside the name. */
 
 .brand {
   display: flex;
@@ -238,12 +238,6 @@ button:hover {
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.version {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--muted);
 }
 
 /* Layout: a sticky sidebar next to the pane. On a phone the sidebar stacks

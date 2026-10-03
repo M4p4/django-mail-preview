@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The version number no longer appears beside the name in the sidebar and the top bar.
+
 ## 0.1.0 (2026-10-03)
 
 First release.
