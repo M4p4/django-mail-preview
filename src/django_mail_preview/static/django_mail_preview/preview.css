@@ -559,7 +559,7 @@ button:hover {
   font-weight: 600;
 }
 
-/* Start page: the inbox table, and the hints */
+/* Start page: the inbox table, or the empty inbox */
 
 .pane .count {
   margin-left: 0.3rem;
@@ -662,30 +662,57 @@ button:hover {
   }
 }
 
-.hint {
-  max-width: 44rem;
-  margin-top: 1.25rem;
-  padding: var(--space-4) 1.25rem;
+/* The empty inbox: a glyph, a heading, one sentence and the one command that
+   changes it, centred in the pane. */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  max-width: 36rem;
+  min-height: 60vh;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.welcome .glyph {
+  width: 3rem;
+  height: 3rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.welcome h1 {
+  margin: 0;
+}
+
+.welcome p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.welcome .copyable {
+  width: 100%;
+  margin-top: var(--space-2);
+  text-align: left;
+}
+
+.welcome pre {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.85rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.hint h2 {
-  margin-bottom: var(--space-2);
-  font-size: 1rem;
-}
-
-.hint p {
-  margin: var(--space-2) 0;
-}
-
-.hint pre {
-  margin: var(--space-3) 0;
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
+}
+
+.welcome .also {
+  margin-top: var(--space-2);
+  font-size: 0.9em;
 }
 
 /* Message page: the header, mail-client style. */

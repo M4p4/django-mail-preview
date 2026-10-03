@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- The sidebar's storage footer is gone. The start page names the directory, or the storage class, while the inbox is empty, and the Inbox heading shows it in a tooltip.
+- The sidebar's storage footer is gone. The Inbox heading shows the directory, or the storage class, in a tooltip.
+- The start page without captured mail is an empty-inbox screen with one copyable command: the setting that points the project at the capture backend, or, once that is active, a `manage.py shell` one-liner that sends a message. A project without previews gets a link to the previews guide instead of a code sample.
 - The version number no longer appears beside the name in the sidebar and the top bar.
 
 ## 0.1.0 (2026-10-03)

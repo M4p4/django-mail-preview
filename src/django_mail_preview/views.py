@@ -16,6 +16,7 @@ from email.utils import parseaddr
 from pathlib import Path
 from typing import Concatenate, ParamSpec, TypeVar
 
+import django
 from django.conf import settings
 from django.http import (
     FileResponse,
@@ -372,9 +373,10 @@ def route(view: str, **kwargs: object) -> str:
 def index(request: HttpRequest) -> HttpResponse:
     """The sidebar and, until a message is picked, what to do next."""
     storage = get_storage()
-    return render(
-        request, "index.html", sidebar(storage, get_previews(), storage.list())
-    )
+    context = sidebar(storage, get_previews(), storage.list())
+    # The empty page's settings hint: MAILERS from Django 6.1, EMAIL_BACKEND before.
+    context["mailers"] = django.VERSION >= (6, 1)
+    return render(request, "index.html", context)
 
 
 @allowed

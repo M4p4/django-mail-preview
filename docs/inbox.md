@@ -22,7 +22,11 @@ backend for the whole run, so `mail.outbox` works as before. See [Limits](limits
 The sidebar lists the previews grouped by app, then the captured messages newest
 first under "Inbox" with their count. The start page shows the captured mail as a
 table with the subject, sender, recipients, an attachment count, the size and the
-time. On a phone the sidebar sits behind a Menu button.
+time. While nothing is captured it shows the one command that changes that: the
+setting that points the project at the capture backend, or, once that is active, a
+`manage.py shell` one-liner that sends a message. A project without previews gets a
+link to the [previews guide](previews.md). On a phone the sidebar sits behind a Menu
+button.
 
 A message page shows the subject, the sender and recipients, the capture time and, on
 Django 6.1, the `MAILERS` alias the message went through. Tabs:
@@ -72,8 +76,7 @@ never sees a half-written message.
 
 By default the directory is under the system temp dir, named after a hash of
 `BASE_DIR`, so projects on one machine get separate inboxes without configuration. The
-start page names the directory while the inbox is empty, and the Inbox heading in the
-sidebar shows it in a tooltip. Set
+Inbox heading in the sidebar shows the directory in a tooltip. Set
 [`MAIL_PREVIEW_ROOT`](settings.md#mail_preview_root) to choose the directory, for
 example on a volume shared between containers (see
 [Docker and several processes](installation.md#docker-and-several-processes)).
