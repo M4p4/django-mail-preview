@@ -37,9 +37,9 @@ the same machine would show it.
 A message page shows the subject, the sender and recipients, the capture time and, on
 Django 6.1, the `MAILERS` alias the message went through. Tabs:
 
-- HTML: the HTML part in a sandboxed frame. The toolbar sets the frame's width, 320,
-  375, 600 (the common email width) or 768 pixels, full width, or any number you
-  type. The choice is remembered. "Open in new tab" shows the HTML on its own.
+- HTML: the HTML part in a sandboxed frame. The toolbar sets the frame's width: 375
+  pixels, 600 pixels (the common email width), full width, or any number you type.
+  The choice is remembered. "Open in new tab" shows the HTML on its own.
 - Plain text: the text part, with a Copy button.
 - Source: the raw message, with a Copy button. It loads as its own page, because
   attachments make it large.
