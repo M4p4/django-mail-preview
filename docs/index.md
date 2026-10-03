@@ -9,7 +9,7 @@ classes build emails from sample data without sending them, so you can look at a
 password-reset mail without triggering one. Both open inside your project, on pages
 that answer 404 unless `DEBUG` is on.
 
-![A captured message rendered in a sandboxed frame at 600 px wide, with the previews grouped by app in the sidebar](_static/inbox.png)
+![A captured message rendered in a sandboxed frame at 600 px wide, with the previews grouped by app and the inbox in the sidebar, in the dark colour scheme](_static/inbox.png)
 
 ## Quickstart
 
