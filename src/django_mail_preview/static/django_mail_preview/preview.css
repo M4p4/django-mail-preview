@@ -818,6 +818,24 @@ a.tag:hover {
   margin-top: var(--space-3);
 }
 
+/* The subject column takes what the others leave: it asks for the whole
+   width and may shrink to nothing, so the addresses get the room they need
+   and the other columns their content's. Addresses break between recipients,
+   never inside one. A subject stays on one line, cut with an ellipsis; the
+   link's tooltip has all of it. */
+
+.inbox td:first-child {
+  width: 100%;
+  max-width: 0;
+}
+
+.inbox td:first-child a {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .inbox th {
   font-size: 0.8rem;
   font-weight: 600;
@@ -827,16 +845,13 @@ a.tag:hover {
   background: var(--hover);
 }
 
-/* Addresses break between recipients, never inside one, and a subject may
-   break anywhere. From and size go first when the pane narrows. */
+/* The page breaks long words anywhere; here only the subject may, on a phone. */
 
 .inbox td {
   overflow-wrap: normal;
 }
 
-.inbox td:first-child {
-  overflow-wrap: anywhere;
-}
+/* From and size go first when the pane narrows, so the subject keeps its room. */
 
 .inbox .num {
   text-align: right;
@@ -886,6 +901,16 @@ a.tag:hover {
     border: 0;
   }
 
+  .inbox td:first-child {
+    width: auto;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+
+  .inbox td:first-child a {
+    white-space: normal;
+  }
+
   .inbox td.paperclip {
     grid-column: 2;
   }
@@ -899,7 +924,6 @@ a.tag:hover {
     grid-column: 1 / -1;
     font-size: 0.9em;
     color: var(--muted);
-    overflow-wrap: anywhere;
   }
 }
 

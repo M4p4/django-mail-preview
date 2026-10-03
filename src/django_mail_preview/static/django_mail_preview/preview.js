@@ -232,7 +232,7 @@
     const rows = [...document.querySelectorAll(".inbox tbody tr")].map((row) => ({
       row,
       subject: row.querySelector("td a").textContent.toLowerCase(),
-      from: row.querySelector("td.from").textContent.toLowerCase(),
+      from: row.querySelector("td.from").title.toLowerCase(),
       to: row.querySelector("td.to").textContent.toLowerCase(),
       attachment: Boolean(row.querySelector(".clip")),
       tags: (row.dataset.tags || "").split(" ").filter(Boolean),

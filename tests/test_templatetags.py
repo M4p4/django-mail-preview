@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from django_mail_preview.templatetags.mail_preview import ago
+from django_mail_preview.templatetags.mail_preview import ago, sender
 
 NOW = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
 
@@ -41,3 +41,17 @@ def test_ago_measures_from_the_current_time_by_default():
     then = datetime.now(timezone.utc) - timedelta(hours=2)
 
     assert ago(then) == "2 hours ago"
+
+
+@pytest.mark.parametrize(
+    ("header", "shown"),
+    [
+        ("Scratch <orders@example.com>", "Scratch"),
+        ('"Scratch Billing" <billing@example.com>', "Scratch Billing"),
+        ("orders@example.com", "orders@example.com"),
+        ("<orders@example.com>", "orders@example.com"),
+        ("", ""),
+    ],
+)
+def test_sender_is_the_name_or_else_the_address(header, shown):
+    assert sender(header) == shown

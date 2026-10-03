@@ -5,6 +5,7 @@
 ## 0.2.2 (2026-10-03)
 
 - The name beside the tile and in the browser tab is `Mail Preview` again, in the pages' own font; the tile stays outlined. The gap under the name in the sidebar is a little tighter.
+- In the inbox table the subject gets the room. It stays on one line, cut short with the whole subject in its tooltip, while the addresses take what they need. The From column shows the sender's name when the header has one, with the address in the tooltip; `from:` in the search box still matches the address.
 
 ## 0.2.1 (2026-10-03)
 
