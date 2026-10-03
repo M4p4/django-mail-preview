@@ -37,7 +37,7 @@ from django.views.decorators.http import require_POST, require_safe
 
 from django_mail_preview.backends import serialise
 from django_mail_preview.checks import backend_is_active
-from django_mail_preview.conf import default_root, mail_preview_settings
+from django_mail_preview.conf import mail_preview_settings
 from django_mail_preview.message import ParsedMessage, parse, prepare_html
 from django_mail_preview.registry import Preview, get_previews
 from django_mail_preview.storage import (
@@ -199,30 +199,27 @@ def sidebar(
     groups: dict[str, list[Preview]] = {}
     for preview in previews:
         groups.setdefault(preview.group, []).append(preview)
-    label, path = storage_label(storage)
+    path, cls = storage_location(storage)
     return {
         "previews": sorted(groups.items()),
         "sent": messages,
         "current": current,
-        "storage_label": label,
         "storage_path": path,
+        "storage_class": cls,
         "backend_active": backend_is_active(),
     }
 
 
-def storage_label(storage: BaseStorage) -> tuple[str, str | None]:
-    """What the footer says about the storage, and the path for its tooltip.
+def storage_location(storage: BaseStorage) -> tuple[str | None, str | None]:
+    """Where captured mail lives: the file storage's directory, or the class
+    of any other storage.
 
-    The file storage names its directory. In the default one under the temp
-    dir only the last segment shows, the project's hash, and the long path
-    stays in the tooltip; a ``MAIL_PREVIEW_ROOT`` the developer set shows
-    whole. Another storage shows its class and has no path.
+    It answers "where is my mail?" in the two places the question comes up,
+    the empty start page and the Inbox heading's tooltip, and nowhere else.
     """
-    if not isinstance(storage, FileStorage):
-        return f"{type(storage).__module__}.{type(storage).__qualname__}", None
-    if storage.root == default_root().resolve():
-        return f"files · {storage.root.name}", str(storage.root)
-    return f"files · {storage.root}", str(storage.root)
+    if isinstance(storage, FileStorage):
+        return str(storage.root), None
+    return None, f"{type(storage).__module__}.{type(storage).__qualname__}"
 
 
 def neighbours(messages: list[StoredMessage], id: str) -> tuple[str | None, str | None]:

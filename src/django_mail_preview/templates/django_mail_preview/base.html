@@ -38,7 +38,7 @@
           {% endfor %}
         </section>
         <section class="sent">
-          <h2>
+          <h2 title="{% if storage_path %}Stored in {{ storage_path }}{% else %}Stored by {{ storage_class }}{% endif %}">
             <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M22 6l-10 7L2 6"></path></svg>
             Inbox <span class="count">{{ sent|length }}</span>
             <button type="button" class="badge" hidden>New mail · refresh</button>
@@ -71,7 +71,6 @@
             <p class="empty">Nothing captured yet.</p>
           {% endif %}
         </section>
-        <footer class="storage"{% if storage_path %} title="{{ storage_path }}"{% endif %}>{{ storage_label }}</footer>
       </aside>
       <main class="pane">
         {% block pane %}{% endblock %}

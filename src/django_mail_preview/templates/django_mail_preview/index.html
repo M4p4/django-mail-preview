@@ -74,6 +74,7 @@ MAILERS = {
 # Django 5.2 and 6.0
 EMAIL_BACKEND = "django_mail_preview.backends.EmailBackend"</code></pre>
         {% endif %}
+        <p>{% if storage_path %}Captured mail is stored in <code>{{ storage_path }}</code>.{% else %}Captured mail is kept by <code>{{ storage_class }}</code>.{% endif %}</p>
       </div>
     {% endif %}
   </section>
