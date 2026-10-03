@@ -279,6 +279,16 @@ button:hover {
   scrollbar-width: thin;
 }
 
+/* The heading stays put while the groups scroll under it, as the inbox's does. */
+.sidebar .previews h2 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-top: 0;
+  padding-top: 1.25rem;
+  background: var(--surface);
+}
+
 .sidebar .sent {
   display: flex;
   flex: 1;
