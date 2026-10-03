@@ -59,6 +59,19 @@ The Download button saves the message as `<id>.eml`. The file is the message as
 stored, so a desktop mail client opens it. That's the closest you get to seeing the
 message in a real client without sending it.
 
+## Searching
+
+The box beside the Inbox heading filters the table as you type. A word matches the
+subject, the sender and the recipients; `from:`, `to:` and `subject:` narrow a word
+to one field; `has:attachment` keeps the messages with attachments; a leading `-`
+excludes. So `invoice -from:billing@` is every message about an invoice that billing
+didn't send. Terms match anywhere in the text, case apart, and all of them must
+match. The heading shows how many messages match, and the query stays in the URL, so
+a reload keeps it. `/` focuses the box from any page and Escape clears it.
+
+The filter runs in the browser over the messages the page lists, so it covers at
+most [`MAIL_PREVIEW_MAX_MESSAGES`](settings.md#mail_preview_max_messages).
+
 ## New mail while the page is open
 
 The page polls for new mail every three seconds while its tab is visible. On the
