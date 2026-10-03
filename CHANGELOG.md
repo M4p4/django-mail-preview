@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-10-03)
+
+- On the message page the tag chips moved from under the subject to a third line of the sender block, under the recipients.
+
 ## 0.2.0 (2026-10-03)
 
 - The name at the top of the sidebar is now `mail.preview`, in monospace with the dot in the accent colour, beside an outlined tile; the page titles say the same. The favicon keeps the filled tile.
