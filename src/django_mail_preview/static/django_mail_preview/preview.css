@@ -984,7 +984,8 @@ a.tag:hover {
   min-width: 0;
 }
 
-.from {
+/* Scoped to the header: the table's From cell carries the class too. */
+.who .from {
   display: block;
   overflow-wrap: anywhere;
 }
