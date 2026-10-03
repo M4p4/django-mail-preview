@@ -1,9 +1,49 @@
-/* Behaviour of the mail preview pages: tabs, the frame's width, the drawer on
-   a phone, folding preview groups, confirmations, copy buttons, the keyboard
-   and the live list. The links and forms work without it; this makes them
-   instant. */
+/* Behaviour of the mail preview pages: light or dark, tabs, the frame's width,
+   the drawer on a phone, folding preview groups, confirmations, copy buttons,
+   the keyboard and the live list. The links and forms work without it; this
+   makes them instant. */
 (() => {
   document.documentElement.classList.add("js");
+
+  // Light or dark: the button beside the wordmark flips the scheme, and the
+  // choice is kept per browser. theme.js applied it before the first paint;
+  // without a stored choice the page follows the system. The glyph and the
+  // label name what a click gives, in every copy of the button.
+  const THEME_KEY = "mail-preview-theme";
+  const prefersDark = matchMedia("(prefers-color-scheme: dark)");
+  const themeButtons = document.querySelectorAll(".theme");
+  const theme = () =>
+    document.documentElement.dataset.theme || (prefersDark.matches ? "dark" : "light");
+  const syncTheme = () => {
+    const next = theme() === "dark" ? "light" : "dark";
+    themeButtons.forEach((button) => {
+      button.setAttribute("aria-label", `Switch to ${next} mode`);
+      button.title = `Switch to ${next} mode`;
+      button.querySelector(".sun").toggleAttribute("hidden", next !== "light");
+      button.querySelector(".moon").toggleAttribute("hidden", next !== "dark");
+    });
+  };
+  const setTheme = (value) => {
+    document.documentElement.dataset.theme = value;
+    syncTheme();
+  };
+  themeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = theme() === "dark" ? "light" : "dark";
+      setTheme(next);
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {
+        // Storage may be unavailable; the choice then lasts for this page only.
+      }
+    });
+  });
+  prefersDark.addEventListener("change", syncTheme);
+  addEventListener("storage", (event) => {
+    const value = event.newValue;
+    if (event.key === THEME_KEY && (value === "light" || value === "dark")) setTheme(value);
+  });
+  syncTheme();
 
   // Tabs switch in place when their pane is on the page. The Source pane is
   // only rendered when it was asked for, so its link navigates instead.

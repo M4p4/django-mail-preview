@@ -573,7 +573,11 @@ def test_latest_reports_the_count_and_the_newest_id(client):
 
 @pytest.mark.parametrize(
     ("name", "content_type"),
-    [("preview.css", "text/css"), ("preview.js", "text/javascript")],
+    [
+        ("preview.css", "text/css"),
+        ("preview.js", "text/javascript"),
+        ("theme.js", "text/javascript"),
+    ],
 )
 def test_assets_come_from_the_package(client, name, content_type):
     response = client.get(route("asset", name=name))
@@ -606,15 +610,46 @@ def test_asset_urls_carry_the_package_version(client):
     response = client.get(route("index"))
 
     content = response.content.decode()
-    for name in ("preview.css", "preview.js"):
+    for name in ("preview.css", "preview.js", "theme.js"):
         assert (
             f"{route('asset', name=name)}?v={version('django-mail-preview')}" in content
         )
 
 
+def test_theme_script_blocks_in_the_head_ahead_of_the_stylesheet(client):
+    """The stored scheme lands on ``<html>`` before anything paints."""
+    content = client.get(route("index")).content.decode()
+
+    script = f'<script src="{route("asset", name="theme.js")}?v={version("django-mail-preview")}"></script>'
+    assert script in content
+    assert content.index(script) < content.index('<link rel="stylesheet"')
+    assert content.index(script) < content.index("<body")
+
+
+@kinds
+def test_theme_button_is_in_the_sidebar_and_the_top_bar(client, kind):
+    pages = [client.get(route("index")), client.get(urls(kind)["page"])]
+
+    for response in pages:
+        content = response.content.decode()
+        buttons = re.findall(r'<button type="button" class="icon theme"[^>]*>', content)
+        assert len(buttons) == 2
+        assert all('aria-label="Switch to dark mode"' in button for button in buttons)
+        assert content.count('class="i moon"') == 2
+        assert content.count('class="i sun"') == 2
+
+
+def test_stylesheet_carries_the_dark_tokens_for_the_system_and_for_the_choice(client):
+    css = client.get(route("asset", name="preview.css")).getvalue().decode()
+
+    assert ':root:not([data-theme="light"])' in css
+    assert ':root[data-theme="dark"]' in css
+    assert ':root[data-theme="light"]' in css
+
+
 @kinds
 def test_pages_have_no_inline_script_style_or_handler(client, kind):
-    """A strict CSP needs no nonce for the pages: the one script has a ``src``."""
+    """A strict CSP needs no nonce for the pages: both scripts have a ``src``."""
     pages = urls(kind)
     rendered = [
         client.get(route("index")).content.decode(),
