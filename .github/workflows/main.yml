@@ -113,3 +113,17 @@ jobs:
         name: dist
         path: dist/
         if-no-files-found: error
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # frozen: v7.0.1
+      with:
+        persist-credentials: false
+    - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # frozen: v10.2.0
+      with:
+        enable-cache: true
+        python-version: '3.14'
+    - name: Build docs
+      run: uvx --with tox-uv==1.36.1 tox==4.64.7 run -e docs
