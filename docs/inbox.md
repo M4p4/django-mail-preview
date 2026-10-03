@@ -72,7 +72,8 @@ never sees a half-written message.
 
 By default the directory is under the system temp dir, named after a hash of
 `BASE_DIR`, so projects on one machine get separate inboxes without configuration. The
-sidebar's footer shows the directory in use, with the full path in its tooltip. Set
+start page names the directory while the inbox is empty, and the Inbox heading in the
+sidebar shows it in a tooltip. Set
 [`MAIL_PREVIEW_ROOT`](settings.md#mail_preview_root) to choose the directory, for
 example on a volume shared between containers (see
 [Docker and several processes](installation.md#docker-and-several-processes)).

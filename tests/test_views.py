@@ -16,7 +16,6 @@ from django.urls import reverse
 from django_mail_preview import EmailPreview, views
 from django_mail_preview.backends import EmailBackend
 from django_mail_preview.checks import BACKEND
-from django_mail_preview.conf import default_root
 from django_mail_preview.storage import FileStorage, new_id
 from tests.helpers import LATE_PREVIEWS, PNG, inline_image
 
@@ -173,10 +172,9 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     assert '<span class="clip"' not in rows[1]
     assert "Nothing captured yet." not in content
     assert 'name="csrfmiddlewaretoken"' in content
-    # A directory the developer set shows whole.
-    assert (
-        f'title="{FileStorage().root}">files · {FileStorage().root}</footer>' in content
-    )
+    # Where the mail lives is a tooltip on the heading, not a line of its own.
+    assert f'<h2 title="Stored in {FileStorage().root}">' in content
+    assert "<footer" not in content
 
 
 def test_index_escapes_a_subject_with_markup(client):
@@ -240,28 +238,26 @@ def test_index_hints_at_the_backend_until_it_is_active(settings, client):
     assert BACKEND not in after.content.decode()
 
 
-def test_footer_names_a_custom_storage(settings, client):
+def test_empty_inbox_names_a_custom_storage(settings, client):
     settings.MAIL_PREVIEW_STORAGE = "tests.test_storage.MemoryStorage"
 
-    response = client.get(route("index"))
+    content = client.get(route("index")).content.decode()
 
+    assert '<h2 title="Stored by tests.test_storage.MemoryStorage">' in content
     assert (
-        '<footer class="storage">tests.test_storage.MemoryStorage</footer>'
-        in response.content.decode()
+        "Captured mail is kept by <code>tests.test_storage.MemoryStorage</code>."
+        in content
     )
 
 
-def test_footer_keeps_the_default_directory_short(settings, client):
-    """The temp path is long and the same on every project; only its hash shows, the path in the tooltip."""
-    del settings.MAIL_PREVIEW_ROOT
-    root = default_root().resolve()
+def test_empty_inbox_names_its_directory(client):
+    """The hint says where the mail will be, in full, so a worker in another container can be pointed there."""
+    root = FileStorage().root
 
-    response = client.get(route("index"))
+    content = client.get(route("index")).content.decode()
 
-    assert (
-        f'<footer class="storage" title="{root}">files · {root.name}</footer>'
-        in response.content.decode()
-    )
+    assert f'<h2 title="Stored in {root}">' in content
+    assert f"Captured mail is stored in <code>{root}</code>." in content
 
 
 def test_message_page(client):

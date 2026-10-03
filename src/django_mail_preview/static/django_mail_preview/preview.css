@@ -250,8 +250,8 @@ button:hover {
 }
 
 /* The sidebar is a column the height of the viewport: the previews are capped,
-   the inbox list takes what is left and scrolls by itself, and "Clear all" and
-   the storage footer stay in view. Should even that not fit, the sidebar as a
+   the inbox list takes what is left and scrolls by itself, and "Clear all"
+   stays in view. Should even that not fit, the sidebar as a
    whole scrolls. */
 
 .sidebar {
@@ -557,13 +557,6 @@ button:hover {
   color: var(--accent-fg);
   font-size: 0.75rem;
   font-weight: 600;
-}
-
-.storage {
-  margin-top: var(--space-4);
-  font-size: 0.8em;
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 /* Start page: the inbox table, and the hints */
