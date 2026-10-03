@@ -301,6 +301,9 @@ def test_message_page_links_each_tag_to_the_filtered_inbox(client):
         f'<p class="tags"><a class="tag" href="{route("index")}?q=tag:billing">billing</a>'
         f'<a class="tag" href="{route("index")}?q=tag:q%26a">q&amp;a</a></p>' in content
     )
+    # Under the addresses, inside the sender block, not under the subject.
+    assert content.index('class="route"') < content.index('<p class="tags">')
+    assert content.index('<p class="tags">') < content.index('class="aside"')
 
 
 def test_index_escapes_a_subject_with_markup(client):
