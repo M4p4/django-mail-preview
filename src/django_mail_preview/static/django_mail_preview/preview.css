@@ -753,34 +753,49 @@ a.tag:hover {
   display: flex;
 }
 
-.inbox td:first-child .tag {
-  margin-left: 0.35rem;
-}
+/* In the lists the chips stay on one line: the first few, shortened with an
+   ellipsis when the line is tight, then the count, which stays whole and
+   names the rest in its tooltip. The message page shows them all. */
 
-/* On a sidebar row the chips share the line with the recipients: two at most
-   and a count, never more than half the line, so an address stays readable. */
-
-.sidebar .tags {
-  flex: 0 1 auto;
+.sidebar .tags,
+.inbox .tags {
   flex-wrap: nowrap;
   min-width: 0;
-  max-width: 55%;
   overflow: hidden;
 }
 
-.sidebar .tag {
+.sidebar .tag,
+.inbox td .tag {
   display: inline-block;
   flex: 0 1 auto;
   min-width: 3em;
   overflow: hidden;
-  font-size: 0.7rem;
-  line-height: 1.5;
   text-overflow: ellipsis;
 }
 
-/* The count stays whole; the named chips shorten first. */
-.sidebar .tag.more {
+.sidebar .tag.more,
+.inbox td .tag.more {
   flex: none;
+}
+
+/* In the table the chips take a line of their own under the subject. */
+
+.inbox td:first-child .tags {
+  display: flex;
+  margin-top: 0.2rem;
+}
+
+/* On a sidebar row they share the line with the recipients and never take
+   more than half of it, so an address stays readable. */
+
+.sidebar .tags {
+  flex: 0 1 auto;
+  max-width: 55%;
+}
+
+.sidebar .tag {
+  font-size: 0.7rem;
+  line-height: 1.5;
 }
 
 .meta .tags {

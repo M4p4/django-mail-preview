@@ -228,13 +228,14 @@
     const count = document.querySelector(".start h1 .count");
     const nomatch = document.querySelector(".nomatch");
     const chips = document.querySelectorAll("button.tag[data-tag]");
+    const more = document.querySelectorAll(".inbox .tag.more[data-tags]");
     const rows = [...document.querySelectorAll(".inbox tbody tr")].map((row) => ({
       row,
       subject: row.querySelector("td a").textContent.toLowerCase(),
       from: row.querySelector("td.from").textContent.toLowerCase(),
       to: row.querySelector("td.to").textContent.toLowerCase(),
       attachment: Boolean(row.querySelector(".clip")),
-      tags: [...row.querySelectorAll(".tag")].map((chip) => chip.dataset.tag),
+      tags: (row.dataset.tags || "").split(" ").filter(Boolean),
     }));
     const parse = (text) =>
       text
@@ -264,9 +265,11 @@
       count.textContent = terms.length ? `${shown} of ${rows.length}` : String(rows.length);
       nomatch.hidden = shown > 0;
       clear.hidden = !query.value;
-      chips.forEach((chip) => {
-        const on = terms.some((t) => t.field === "tag" && !t.not && t.value === chip.dataset.tag);
-        chip.setAttribute("aria-pressed", String(on));
+      const held = (tag) => terms.some((t) => t.field === "tag" && !t.not && t.value === tag);
+      chips.forEach((chip) => chip.setAttribute("aria-pressed", String(held(chip.dataset.tag))));
+      // A "+N" chip is pressed when one of the tags it stands for is in the query.
+      more.forEach((chip) => {
+        chip.setAttribute("aria-pressed", String(chip.dataset.tags.split(" ").some(held)));
       });
       const url = new URL(location.href);
       if (query.value.trim()) url.searchParams.set("q", query.value.trim());

@@ -217,7 +217,7 @@ def test_index_lists_the_tags_with_their_counts(client):
 
     content = client.get(route("index")).content.decode()
 
-    chip = '<button type="button" class="tag" data-tag="{0}" aria-pressed="false">{0}'
+    chip = '<button type="button" class="tag" data-tag="{0}" aria-pressed="false">{0}</button>'
     [bar] = re.findall(
         r'<div class="tagbar" role="group" aria-label="Filter by tag">(.*?)</div>',
         content,
@@ -227,23 +227,29 @@ def test_index_lists_the_tags_with_their_counts(client):
         ("billing", "2"),
         ("onboarding", "1"),
     ]
-    # After the subject in the table, sorted; none on the untagged row.
-    cells = re.findall(r"<tr>\s*<td>(.*?)</td>", content, re.S)
+    # Under the subject in the table, sorted; the row carries them for the script.
+    cells = re.findall(r"<tr[^>]*>\s*<td>(.*?)</td>", content, re.S)
     assert cells[0] == (
-        f'<a href="{route("sent", id=welcome)}">Welcome</a> '
-        f"{chip.format('billing')}</button> {chip.format('onboarding')}</button>"
+        f'<a href="{route("sent", id=welcome)}">Welcome</a><span class="tags">'
+        f"{chip.format('billing')}{chip.format('onboarding')}</span>"
     )
     assert cells[1] == (
-        f'<a href="{route("sent", id=receipt)}">Receipt</a> '
-        f"{chip.format('billing')}</button>"
+        f'<a href="{route("sent", id=receipt)}">Receipt</a>'
+        f'<span class="tags">{chip.format("billing")}</span>'
     )
     assert 'class="tag"' not in cells[2]
+    body = content.split("<tbody>")[1]
+    assert re.findall(r"<tr( data-tags=\"[^\"]*\")?>", body) == [
+        ' data-tags="billing onboarding"',
+        ' data-tags="billing"',
+        "",
+    ]
     # Plain spans on the sidebar rows.
     assert (
         '<span class="tags"><span class="tag">billing</span>'
         '<span class="tag">onboarding</span></span>' in content
     )
-    assert content.count('<span class="tags">') == 2
+    assert content.count('<span class="tags"><span class="tag">') == 2
 
 
 def test_sidebar_row_shows_two_tags_and_counts_the_rest(client):
@@ -256,8 +262,13 @@ def test_sidebar_row_shows_two_tags_and_counts_the_rest(client):
         '<span class="tag more" title="quarterly, renewal, vip">+3</span></span>'
         in content
     )
-    # The table row has all five.
-    assert content.count('aria-pressed="false">') == 5 + 5
+    # The table row shows three and counts the rest, but carries all five.
+    assert (
+        '<span class="tag more" data-tags="renewal vip" title="renewal, vip" '
+        'aria-pressed="false">+2</span></span></td>' in content
+    )
+    assert content.count('<button type="button" class="tag"') == 5 + 3
+    assert 'data-tags="billing finance quarterly renewal vip"' in content
 
 
 def test_index_without_tags_has_no_tag_row(client):

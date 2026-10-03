@@ -33,8 +33,9 @@
         </thead>
         <tbody>
           {% for item in sent %}
-            <tr>
-              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a>{% for tag in item.meta.tags %} <button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }}</button>{% endfor %}</td>
+            {# The row carries every tag for the script; the cell shows three and counts the rest, with the names in the tooltip. #}
+            <tr{% if item.meta.tags %} data-tags="{{ item.meta.tags|join:" " }}"{% endif %}>
+              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a>{% if item.meta.tags %}<span class="tags">{% for tag in item.meta.tags|slice:":3" %}<button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }}</button>{% endfor %}{% if item.meta.tags|length > 3 %}<span class="tag more" data-tags="{{ item.meta.tags|slice:"3:"|join:" " }}" title="{{ item.meta.tags|slice:"3:"|join:", " }}" aria-pressed="false">+{{ item.meta.tags|length|add:"-3" }}</span>{% endif %}</span>{% endif %}</td>
               <td class="from wide">{{ item.meta.from_email }}</td>
               <td class="to">{{ item.meta.to|join:", " }}</td>
               <td class="paperclip">
