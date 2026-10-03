@@ -65,7 +65,7 @@
             </ul>
             <form method="post" action="{% url 'mail_preview:sent_clear' %}" data-confirm="Delete all captured messages?">
               {% csrf_token %}
-              <button type="submit" class="danger">Clear all</button>
+              <button type="submit" class="danger clear"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Clear all</button>
             </form>
           {% else %}
             <p class="empty">Nothing captured yet.</p>

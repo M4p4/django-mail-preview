@@ -255,14 +255,42 @@ button:hover {
   min-height: 100vh;
 }
 
+/* The sidebar is a column the height of the viewport: the previews are capped,
+   the inbox list takes what is left and scrolls by itself, and "Clear all" and
+   the storage footer stay in view. Should even that not fit, the sidebar as a
+   whole scrolls. */
+
 .sidebar {
   position: sticky;
   top: 0;
-  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   overflow-y: auto;
   padding: var(--space-4);
   background: var(--surface);
   border-right: 1px solid var(--border);
+}
+
+.sidebar .previews {
+  flex: none;
+  max-height: 40vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar .sent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar .sent ul {
+  flex: 1;
+  min-height: 6rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .pane {
@@ -301,9 +329,15 @@ button:hover {
 
   .sidebar {
     position: static;
-    max-height: none;
+    height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  /* In the flow, the lists would grow with their content; cap the inbox so the
+     page below stays reachable. */
+  html:not(.js) .sidebar .sent ul {
+    max-height: 50vh;
   }
 
   .sidebar,
@@ -318,6 +352,7 @@ button:hover {
     left: 0;
     z-index: 3;
     width: min(20rem, 85vw);
+    height: auto;
     overflow-y: auto;
     border-right: 1px solid var(--border);
     border-bottom: 0;
@@ -500,6 +535,15 @@ button:hover {
   margin-top: var(--space-3);
 }
 
+.sidebar .clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+}
+
 .badge {
   margin-left: auto;
   padding: 0.15rem 0.6rem;
@@ -512,7 +556,7 @@ button:hover {
 }
 
 .storage {
-  margin-top: var(--space-6);
+  margin-top: var(--space-4);
   font-size: 0.8em;
   color: var(--muted);
   overflow-wrap: anywhere;
