@@ -790,12 +790,11 @@ def test_pages_carry_the_wordmark_and_the_favicon(client):
     content = client.get(route("index")).content.decode()
 
     assert '<link rel="icon" href="data:image/svg+xml,' in content
-    # Beside the name in the sidebar and in the top bar.
-    assert (
-        content.count(
-            f'<span class="version" title="django-mail-preview {version("django-mail-preview")}">'
-        )
-        == 2
+    # In the sidebar and in the top bar, without a version number beside the name.
+    assert content.count('class="wordmark"') == 2
+    assert 'class="version"' not in content
+    assert version("django-mail-preview") not in content.replace(
+        f"?v={version('django-mail-preview')}", ""
     )
 
 
