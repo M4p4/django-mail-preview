@@ -78,8 +78,9 @@ most [`MAIL_PREVIEW_MAX_MESSAGES`](settings.md#mail_preview_max_messages).
 ## Tagging mail
 
 A captured message can carry tags. They show as chips after the subject in the table,
-on the sidebar rows and on the message page, and a row under the Inbox heading lists
-every tag with how many messages carry it. Clicking a chip filters the table through
+on the sidebar rows (two at most, then a count whose tooltip names the rest) and on
+the message page, and a row under the Inbox heading lists every tag with how many
+messages carry it. Clicking a chip filters the table through
 the search box (`tag:billing`), and the chips on a message page link to the inbox
 filtered the same way.
 

@@ -64,7 +64,8 @@
                     <span class="line">
                       <span class="to">{{ item.meta.to|join:", " }}</span>
                       {% if item.meta.tags %}
-                        <span class="tags">{% for tag in item.meta.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</span>
+                        {# Two chips at most, so the recipients keep their room; the rest are a count with the names in its tooltip. #}
+                        <span class="tags">{% for tag in item.meta.tags|slice:":2" %}<span class="tag">{{ tag }}</span>{% endfor %}{% if item.meta.tags|length > 2 %}<span class="tag more" title="{{ item.meta.tags|slice:'2:'|join:', ' }}">+{{ item.meta.tags|length|add:"-2" }}</span>{% endif %}</span>
                       {% endif %}
                       {% if item.meta.attachments %}
                         <span class="clip" title="{{ item.meta.attachments }} attachment{{ item.meta.attachments|pluralize }}">{% include "django_mail_preview/_clip.html" %}{{ item.meta.attachments }}</span>

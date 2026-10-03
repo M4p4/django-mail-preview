@@ -757,19 +757,30 @@ a.tag:hover {
   margin-left: 0.35rem;
 }
 
-/* On a sidebar row the chips share the line with the recipients and give way
-   to the paperclip and the time. */
+/* On a sidebar row the chips share the line with the recipients: two at most
+   and a count, never more than half the line, so an address stays readable. */
 
 .sidebar .tags {
   flex: 0 1 auto;
   flex-wrap: nowrap;
   min-width: 0;
+  max-width: 55%;
   overflow: hidden;
 }
 
 .sidebar .tag {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 3em;
+  overflow: hidden;
   font-size: 0.7rem;
   line-height: 1.5;
+  text-overflow: ellipsis;
+}
+
+/* The count stays whole; the named chips shorten first. */
+.sidebar .tag.more {
+  flex: none;
 }
 
 .meta .tags {

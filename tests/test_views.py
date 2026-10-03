@@ -246,6 +246,20 @@ def test_index_lists_the_tags_with_their_counts(client):
     assert content.count('<span class="tags">') == 2
 
 
+def test_sidebar_row_shows_two_tags_and_counts_the_rest(client):
+    capture(tagged("Statement", "renewal", "billing", "finance", "quarterly", "vip"))
+
+    content = client.get(route("index")).content.decode()
+
+    assert (
+        '<span class="tags"><span class="tag">billing</span><span class="tag">finance</span>'
+        '<span class="tag more" title="quarterly, renewal, vip">+3</span></span>'
+        in content
+    )
+    # The table row has all five.
+    assert content.count('aria-pressed="false">') == 5 + 5
+
+
 def test_index_without_tags_has_no_tag_row(client):
     capture(plain())
 
