@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The browser tab says `Mail Preview` again; the sidebar keeps the `mail.preview` wordmark.
+
 ## 0.2.1 (2026-10-03)
 
 - On the message page the tag chips moved from under the subject to a third line of the sender block, under the recipients.

@@ -422,7 +422,7 @@ def test_message_page(client):
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert "<title>Welcome · mail.preview</title>" in content
+    assert "<title>Welcome · Mail Preview</title>" in content
     for address in ("sender", "to", "cc", "bcc", "reply"):
         assert f"{address}@example.com" in content
     assert f'<iframe src="{route("sent_html", id=id)}"' in content
@@ -983,7 +983,7 @@ def test_pages_carry_the_wordmark_and_the_favicon(client):
         content.count('<span class="name">mail<span class="dot">.</span>preview</span>')
         == 2
     )
-    assert "<title>mail.preview</title>" in content
+    assert "<title>Mail Preview</title>" in content
     assert 'class="version"' not in content
     assert version("django-mail-preview") not in content.replace(
         f"?v={version('django-mail-preview')}", ""
@@ -1062,7 +1062,7 @@ def test_preview_page(client, name, subject, tab):
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert f"<title>{subject} · mail.preview</title>" in content
+    assert f"<title>{subject} · Mail Preview</title>" in content
     assert "noreply@example.com" in content
     assert "ada@example.com" in content
     assert f"<code>tests.{name}</code>" in content
@@ -1126,8 +1126,8 @@ def test_params_reach_the_preview(client):
     english = client.get(route("preview", group="tests", name="greeting"))
     german = client.get(route("preview", group="tests", name="greeting") + "?lang=de")
 
-    assert "<title>Hello Ada · mail.preview</title>" in english.content.decode()
-    assert "<title>Hallo Ada · mail.preview</title>" in german.content.decode()
+    assert "<title>Hello Ada · Mail Preview</title>" in english.content.decode()
+    assert "<title>Hallo Ada · Mail Preview</title>" in german.content.decode()
 
 
 def test_params_are_passed_on_to_the_frame_and_the_downloads(client):
@@ -1294,4 +1294,4 @@ def test_previews_module_created_after_start_appears_on_the_next_request(
     assert "lateapp.welcome" not in before.content.decode()
     assert "lateapp.welcome" in after.content.decode()
     assert page.status_code == 200
-    assert "<title>Late · mail.preview</title>" in page.content.decode()
+    assert "<title>Late · Mail Preview</title>" in page.content.decode()
