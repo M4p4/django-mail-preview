@@ -24,21 +24,22 @@
       <table class="inbox">
         <thead>
           <tr>
+            {# The other columns have set widths; the subject gets the rest. #}
             <th scope="col">Subject</th>
-            <th scope="col" class="wide">From</th>
-            <th scope="col">To</th>
-            <th scope="col"><span class="visually-hidden">Attachments</span></th>
+            <th scope="col" class="from wide">From</th>
+            <th scope="col" class="to">To</th>
+            <th scope="col" class="paperclip"><span class="visually-hidden">Attachments</span></th>
             <th scope="col" class="wide num">Size</th>
-            <th scope="col">Time</th>
+            <th scope="col" class="time">Time</th>
           </tr>
         </thead>
         <tbody>
           {% for item in sent %}
             {# The row carries every tag for the script; the cell shows three and counts the rest, with the names in the tooltip. #}
             <tr{% if item.meta.tags %} data-tags="{{ item.meta.tags|join:" " }}"{% endif %}>
-              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}" title="{{ item.meta.subject|default:"(no subject)" }}">{{ item.meta.subject|default:"(no subject)" }}</a>{% if item.meta.tags %}<span class="tags">{% for tag in item.meta.tags|slice:":3" %}<button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }}</button>{% endfor %}{% if item.meta.tags|length > 3 %}<span class="tag more" data-tags="{{ item.meta.tags|slice:"3:"|join:" " }}" title="{{ item.meta.tags|slice:"3:"|join:", " }}" aria-pressed="false">+{{ item.meta.tags|length|add:"-3" }}</span>{% endif %}</span>{% endif %}</td>
+              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a>{% if item.meta.tags %}<span class="tags">{% for tag in item.meta.tags|slice:":3" %}<button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }}</button>{% endfor %}{% if item.meta.tags|length > 3 %}<span class="tag more" data-tags="{{ item.meta.tags|slice:"3:"|join:" " }}" title="{{ item.meta.tags|slice:"3:"|join:", " }}" aria-pressed="false">+{{ item.meta.tags|length|add:"-3" }}</span>{% endif %}</span>{% endif %}</td>
               {# The sender's name when the header has one, the address in the tooltip; the script searches the tooltip. #}
-              <td class="from wide" title="{{ item.meta.from_email }}">{{ item.meta.from_email|sender }}</td>
+              <td class="from wide" title="{{ item.meta.from_email }}"><span class="name">{{ item.meta.from_email|sender }}</span></td>
               <td class="to">{{ item.meta.to|join:", " }}</td>
               <td class="paperclip">
                 {% if item.meta.attachments %}

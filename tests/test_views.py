@@ -167,7 +167,7 @@ def test_table_shows_the_sender_name_with_the_address_in_the_tooltip(client):
     content = client.get(route("index")).content.decode()
 
     assert (
-        '<td class="from wide" title="Scratch &lt;orders@example.com&gt;">Scratch</td>'
+        '<td class="from wide" title="Scratch &lt;orders@example.com&gt;"><span class="name">Scratch</span></td>'
         in content
     )
 
@@ -187,9 +187,9 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     )
     rows = re.findall(r"<tr>\s*<td>(.*?)</tr>", content, re.S)
     assert len(rows) == 2
-    assert f'<a href="{route("sent", id=second)}" title="Second">Second</a>' in rows[0]
+    assert f'<a href="{route("sent", id=second)}">Second</a>' in rows[0]
     assert (
-        '<td class="from wide" title="sender@example.com">sender@example.com</td>'
+        '<td class="from wide" title="sender@example.com"><span class="name">sender@example.com</span></td>'
         in rows[0]
     )
     assert '<td class="to">to@example.com</td>' in rows[0]
@@ -248,11 +248,11 @@ def test_index_lists_the_tags_with_their_counts(client):
     # Under the subject in the table, sorted; the row carries them for the script.
     cells = re.findall(r"<tr[^>]*>\s*<td>(.*?)</td>", content, re.S)
     assert cells[0] == (
-        f'<a href="{route("sent", id=welcome)}" title="Welcome">Welcome</a><span class="tags">'
+        f'<a href="{route("sent", id=welcome)}">Welcome</a><span class="tags">'
         f"{chip.format('billing')}{chip.format('onboarding')}</span>"
     )
     assert cells[1] == (
-        f'<a href="{route("sent", id=receipt)}" title="Receipt">Receipt</a>'
+        f'<a href="{route("sent", id=receipt)}">Receipt</a>'
         f'<span class="tags">{chip.format("billing")}</span>'
     )
     assert 'class="tag"' not in cells[2]

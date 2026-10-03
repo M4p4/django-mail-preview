@@ -816,24 +816,59 @@ a.tag:hover {
 
 .inbox {
   margin-top: var(--space-3);
+  table-layout: fixed;
 }
 
-/* The subject column takes what the others leave: it asks for the whole
-   width and may shrink to nothing, so the addresses get the room they need
-   and the other columns their content's. Addresses break between recipients,
-   never inside one. A subject stays on one line, cut with an ellipsis; the
-   link's tooltip has all of it. */
+/* The subject matters most, so every other column has a set width and the
+   subject takes the rest, breaking anywhere. The recipients wrap onto more
+   lines, between addresses first and inside one only when it alone is wider
+   than the column. A sender's name stays on one line; one wider than the
+   column is cut with an ellipsis, and the cell's tooltip has the whole
+   header. The addresses are a step smaller than the subject. */
+
+.inbox th.from {
+  width: 10rem;
+}
+
+.inbox th.to {
+  width: 24%;
+}
+
+.inbox th.paperclip {
+  width: 2.25rem;
+}
+
+.inbox th.num {
+  width: 6rem;
+}
+
+.inbox th.time {
+  width: 8rem;
+}
 
 .inbox td:first-child {
-  width: 100%;
-  max-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.inbox td:first-child a {
-  display: block;
-  overflow: hidden;
+.inbox td.from,
+.inbox td.to {
+  font-size: 0.9em;
+}
+
+.inbox td.to {
+  overflow-wrap: anywhere;
+}
+
+.inbox td.from {
   white-space: nowrap;
+}
+
+.inbox td.from .name {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .inbox th {
@@ -845,7 +880,7 @@ a.tag:hover {
   background: var(--hover);
 }
 
-/* The page breaks long words anywhere; here only the subject may, on a phone. */
+/* The page breaks long words anywhere; the cells above say where they may. */
 
 .inbox td {
   overflow-wrap: normal;
@@ -868,9 +903,13 @@ a.tag:hover {
   color: var(--muted);
 }
 
-@media (max-width: 64rem) {
+@media (max-width: 72rem) {
   .inbox .wide {
     display: none;
+  }
+
+  .inbox th.to {
+    width: 30%;
   }
 }
 
@@ -901,15 +940,6 @@ a.tag:hover {
     border: 0;
   }
 
-  .inbox td:first-child {
-    width: auto;
-    max-width: none;
-    overflow-wrap: anywhere;
-  }
-
-  .inbox td:first-child a {
-    white-space: normal;
-  }
 
   .inbox td.paperclip {
     grid-column: 2;
