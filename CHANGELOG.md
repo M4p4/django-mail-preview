@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0 (2026-10-03)
+
 First release.
 
 - A capture email backend, `django_mail_preview.backends.EmailBackend`, that stores every message sent through it instead of delivering it. It takes the place of `EMAIL_BACKEND` on Django 5.2 and 6.0 and of a `MAILERS` backend on Django 6.1, where it also records the alias a message went through.
