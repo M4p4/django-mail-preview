@@ -20,7 +20,7 @@ backend for the whole run, so `mail.outbox` works as before. See [Limits](limits
 ## The page
 
 The sidebar lists the previews grouped by app, then the captured messages newest
-first under "Sent" with their count. The start page shows the captured mail as a
+first under "Inbox" with their count. The start page shows the captured mail as a
 table with the subject, sender, recipients, an attachment count, the size and the
 time. On a phone the sidebar sits behind a Menu button.
 
