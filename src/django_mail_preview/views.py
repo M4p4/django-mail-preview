@@ -162,8 +162,16 @@ def without_project_csp(view: V) -> V:
 
 @functools.cache
 def engine() -> Engine:
-    """The package's own template engine, independent of the project's ``TEMPLATES``."""
-    return Engine(dirs=[str(PACKAGE / "templates")], debug=settings.DEBUG)
+    """The package's own template engine, independent of the project's ``TEMPLATES``.
+
+    Its filters are named here rather than found through ``INSTALLED_APPS``,
+    so the engine stands on its own like the rest of it.
+    """
+    return Engine(
+        dirs=[str(PACKAGE / "templates")],
+        debug=settings.DEBUG,
+        libraries={"mail_preview": "django_mail_preview.templatetags.mail_preview"},
+    )
 
 
 def render(
