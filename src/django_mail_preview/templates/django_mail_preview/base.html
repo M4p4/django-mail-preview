@@ -21,7 +21,7 @@
       <aside class="sidebar" id="sidebar">
         <h1 class="brand">{% include "django_mail_preview/_wordmark.html" %}</h1>
         <section class="previews">
-          <h2>Previews</h2>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Previews</h2>
           {% for group, items in previews %}
             <details class="group" data-group="{{ group }}" open>
               <summary>{{ group }} <span class="count">{{ items|length }}</span></summary>
@@ -39,7 +39,8 @@
         </section>
         <section class="sent">
           <h2>
-            Sent · {{ sent|length }}
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M22 6l-10 7L2 6"></path></svg>
+            Inbox <span class="count">{{ sent|length }}</span>
             <button type="button" class="badge" hidden>New mail · refresh</button>
           </h2>
           {% if sent %}
@@ -64,7 +65,7 @@
             </ul>
             <form method="post" action="{% url 'mail_preview:sent_clear' %}" data-confirm="Delete all captured messages?">
               {% csrf_token %}
-              <button type="submit" class="danger">Clear all</button>
+              <button type="submit" class="danger clear"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Clear all</button>
             </form>
           {% else %}
             <p class="empty">Nothing captured yet.</p>
