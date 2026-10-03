@@ -6,6 +6,8 @@
     <title>{% block title %}Mail preview{% endblock %}</title>
     {# The wordmark's tile as the tab icon. A project CSP without img-src data: just drops it. #}
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230f766e'/><path d='M8 23V9l8 9 8-9v14' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+    {# The stored colour scheme, applied before the first paint. Blocking on purpose, and tiny. #}
+    <script src="{% url 'mail_preview:asset' name='theme.js' %}?v={{ version }}"></script>
     <link rel="stylesheet" href="{% url 'mail_preview:asset' name='preview.css' %}?v={{ version }}">
     <script src="{% url 'mail_preview:asset' name='preview.js' %}?v={{ version }}" defer></script>
   </head>
@@ -15,11 +17,17 @@
       {# On a phone the sidebar is a drawer behind this bar's button; the script makes it one. #}
       <header class="topbar">
         <span class="brand">{% include "django_mail_preview/_wordmark.html" %}</span>
-        <button type="button" class="menu" aria-controls="sidebar" aria-expanded="false">Menu</button>
+        <span class="tools">
+          {% include "django_mail_preview/_theme.html" %}
+          <button type="button" class="menu" aria-controls="sidebar" aria-expanded="false">Menu</button>
+        </span>
       </header>
       <div class="scrim" hidden></div>
       <aside class="sidebar" id="sidebar">
-        <h1 class="brand">{% include "django_mail_preview/_wordmark.html" %}</h1>
+        <div class="head">
+          <h1 class="brand">{% include "django_mail_preview/_wordmark.html" %}</h1>
+          {% include "django_mail_preview/_theme.html" %}
+        </div>
         <section class="previews">
           <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Previews</h2>
           {% for group, items in previews %}

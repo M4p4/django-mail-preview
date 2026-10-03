@@ -25,8 +25,13 @@
   --sidebar-width: 18rem;
 }
 
+/* The dark tokens, twice: for a system set to dark while no choice is stored,
+   and for the stored choice, which also pins the colour scheme so form
+   controls and scrollbars follow. theme.js sets the attribute before the
+   first paint. */
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #141412;
     --surface: #1d1d1a;
     --fg: #ebe9e3;
@@ -37,6 +42,23 @@
     --danger: #f97066;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #141412;
+  --surface: #1d1d1a;
+  --fg: #ebe9e3;
+  --muted: #a4a196;
+  --border: #34332e;
+  --accent: #2dd4bf;
+  --accent-fg: #0b1a18;
+  --danger: #f97066;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -177,6 +199,13 @@ button:hover {
   border-color: var(--border);
   color: var(--muted);
   opacity: 0.45;
+}
+
+/* Light or dark: the button beside the wordmark. It does nothing without the
+   script, so it shows once the script has run; a phone gets the top bar's copy. */
+
+html:not(.js) .theme {
+  display: none;
 }
 
 /* Newer and Older: a joined pair. */
@@ -326,8 +355,18 @@ button:hover {
     border-bottom: 1px solid var(--border);
   }
 
+  .topbar .tools {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
   /* Without the script there is nothing to open: the sidebar is in the flow. */
   html:not(.js) .menu {
+    display: none;
+  }
+
+  .sidebar .theme {
     display: none;
   }
 
@@ -388,8 +427,15 @@ button:hover {
 
 /* Sidebar */
 
-.sidebar h1 {
+.sidebar .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin-bottom: 1.25rem;
+}
+
+.sidebar h1 {
   font-size: 1.05rem;
 }
 
@@ -962,12 +1008,15 @@ button:hover {
   text-decoration: underline;
 }
 
-/* The frame keeps the email's own colours; the script sets its width. The
-   border sits outside that width, so a 375 px frame shows the email at 375 px. */
+/* The frame keeps the email's own colours, and its own scheme: the system's,
+   whatever the chrome shows, as a browser passes a frame element's single
+   scheme on to the document inside. The script sets the width; the border
+   sits outside it, so a 375 px frame shows the email at 375 px. */
 
 .tab iframe {
   display: block;
   box-sizing: content-box;
+  color-scheme: light dark;
   width: 100%;
   max-width: calc(100% - 2px);
   min-height: 70vh;

@@ -28,6 +28,12 @@ setting that points the project at the capture backend, or, once that is active,
 link to the [previews guide](previews.md). On a phone the sidebar sits behind a Menu
 button.
 
+The pages follow the system's light or dark scheme until you press the sun or moon
+button beside the name, in the sidebar or in a phone's top bar. The choice is kept in
+the browser and applied before the page paints, so the next load doesn't flash. The
+email in the frame is not affected: it keeps the system's scheme, as a mail client on
+the same machine would show it.
+
 A message page shows the subject, the sender and recipients, the capture time and, on
 Django 6.1, the `MAILERS` alias the message went through. Tabs:
 

@@ -95,7 +95,11 @@ URLs.
 DOWNLOAD_CSP = "sandbox; default-src 'none'"
 """The policy of a part or ``.eml`` download: an SVG or HTML attachment opened directly can't run script in the site's origin."""
 
-ASSETS = {"preview.css": "text/css", "preview.js": "text/javascript"}
+ASSETS = {
+    "preview.css": "text/css",
+    "preview.js": "text/javascript",
+    "theme.js": "text/javascript",
+}
 """The files ``asset`` serves, with explicit content types: the ``mimetypes`` registry isn't reliable on Windows."""
 
 TABS = (
