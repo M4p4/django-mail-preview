@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 (2026-10-03)
+
 - The name at the top of the sidebar is now `mail.preview`, in monospace with the dot in the accent colour, beside an outlined tile; the page titles say the same. The favicon keeps the filled tile.
 - The inbox table says how long ago a message arrived, "just now", "4 minutes ago", "2 days ago", instead of the date and time. The exact time is in a tooltip, and the wording keeps up while the page is open. The sidebar and the message page are unchanged.
 - Tags on captured mail. They come from the message's `X-Tags` header, comma separated as Mailpit reads it, from a function named by the new `MAIL_PREVIEW_TAGS` setting, and, with `MAIL_PREVIEW_PLUS_ADDRESSING`, from the part after `+` in a recipient's address. They show as chips after the subject in the table, on the sidebar rows and on the message page, a row under the Inbox heading lists them with counts, a click on a chip filters the table, and `tag:` is a search operator. `MessageMeta` gains a `tags` field, and the checks `django_mail_preview.E005` and `E006` report the two settings when they can't be used.
