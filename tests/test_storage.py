@@ -121,7 +121,12 @@ def test_message_id_pattern_rejects(value):
 
 
 def test_meta_json_round_trip():
-    record = meta(alias="dev", attachments=2, cc=("cc@example.com",))
+    record = meta(
+        alias="dev",
+        attachments=2,
+        cc=("cc@example.com",),
+        tags=("billing", "onboarding"),
+    )
 
     text = record.to_json()
     restored = MessageMeta.from_json(text)
@@ -131,6 +136,19 @@ def test_meta_json_round_trip():
     assert data["date"] == "2026-10-01T12:00:00.123456+00:00"
     assert data["to"] == ["to@example.com"]
     assert data["alias"] == "dev"
+    assert data["tags"] == ["billing", "onboarding"]
+
+
+def test_meta_from_json_without_tags():
+    """A sidecar written before tags existed loads as untagged."""
+    record = meta()
+    data = json.loads(record.to_json())
+    del data["tags"]
+
+    restored = MessageMeta.from_json(json.dumps(data))
+
+    assert restored == record
+    assert restored.tags == ()
 
 
 def test_round_trip(mail_preview_root):

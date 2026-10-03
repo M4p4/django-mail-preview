@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import functools
 import importlib.metadata
+from collections import Counter
 from collections.abc import Callable
 from email.utils import parseaddr
 from pathlib import Path
@@ -377,11 +378,16 @@ def route(view: str, **kwargs: object) -> str:
 def index(request: HttpRequest) -> HttpResponse:
     """The sidebar and, until a message is picked, what to do next."""
     storage = get_storage()
-    context = sidebar(storage, get_previews(), storage.list())
+    messages = storage.list()
+    context = sidebar(storage, get_previews(), messages)
     # The empty page's settings hint: MAILERS from Django 6.1, EMAIL_BACKEND before.
     context["mailers"] = django.VERSION >= (6, 1)
     # The search box's value, so a reload for new mail keeps the query.
     context["query"] = request.GET.get("q", "")
+    # The chip row: every tag of the listed mail, with how many messages carry it.
+    context["tags"] = sorted(
+        Counter(tag for stored in messages for tag in stored.meta.tags).items()
+    )
     return render(request, "index.html", context)
 
 

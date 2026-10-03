@@ -63,14 +63,64 @@ message in a real client without sending it.
 
 The box beside the Inbox heading filters the table as you type. A word matches the
 subject, the sender and the recipients; `from:`, `to:` and `subject:` narrow a word
-to one field; `has:attachment` keeps the messages with attachments; a leading `-`
-excludes. So `invoice -from:billing@` is every message about an invoice that billing
-didn't send. Terms match anywhere in the text, case apart, and all of them must
-match. The heading shows how many messages match, and the query stays in the URL, so
-a reload keeps it. `/` focuses the box from any page and Escape clears it.
+to one field; `has:attachment` keeps the messages with attachments; `tag:` keeps the
+messages with that [tag](#tagging-mail); a leading `-` excludes. So
+`invoice -from:billing@` is every message about an invoice that billing didn't send,
+and `tag:billing -has:attachment` every billing message without an attachment. Terms
+match anywhere in the text, case apart, and all of them must match; a `tag:` term
+names a whole tag, so `tag:bill` doesn't find `billing`. The heading shows how many
+messages match, and the query stays in the URL, so a reload keeps it. `/` focuses the
+box from any page and Escape clears it.
 
 The filter runs in the browser over the messages the page lists, so it covers at
 most [`MAIL_PREVIEW_MAX_MESSAGES`](settings.md#mail_preview_max_messages).
+
+## Tagging mail
+
+A captured message can carry tags. They show as chips under the subject in the table,
+on the sidebar rows and on the message page, and a row under the Inbox heading lists
+every tag with how many messages carry it. The lists show the first few chips, three
+in the table and two in the sidebar, then a count whose tooltip names the rest; the
+message page shows them all. Clicking a chip filters the table through
+the search box (`tag:billing`), and the chips on a message page link to the inbox
+filtered the same way.
+
+Tags come from three sources, merged:
+
+- The message's `X-Tags` header, comma separated. It's the header
+  [Mailpit](https://mailpit.axllent.org/docs/usage/tagging/) reads too, so the same
+  code tags mail in both tools:
+
+  ```python
+  EmailMessage(..., headers={"X-Tags": "billing, onboarding"})
+  ```
+
+- A function named by [`MAIL_PREVIEW_TAGS`](settings.md#mail_preview_tags), called
+  with the `EmailMessage` as it's captured, for rules such as "everything from
+  billing is `billing`":
+
+  ```python
+  MAIL_PREVIEW_TAGS = "myproject.mail.tags"
+  ```
+
+  ```python
+  def tags(message):
+      if message.from_email.startswith("billing@"):
+          return ["billing"]
+      return []
+  ```
+
+  It returns the tags as a list, or a comma-separated string like the header, or
+  `None` for none. An error in it propagates, like any error while capturing.
+
+- With [`MAIL_PREVIEW_PLUS_ADDRESSING`](settings.md#mail_preview_plus_addressing) set
+  to `True`, the part after `+` in a recipient's address: a message to
+  `ada+welcome@example.com` is tagged `welcome`. It's off by default, because a
+  project that uses plus addressing for its own ends would get a tag per address.
+
+Tags are fixed when the message is captured and normalised then: lowercased, trimmed,
+spaces inside a tag turned into hyphens so `tag:` can always name one, duplicates
+dropped, and sorted. Previews get no tags; they're grouped by app already.
 
 ## New mail while the page is open
 
@@ -146,8 +196,8 @@ class RedisStorage(BaseStorage):
 and `delete()` is silent when the id is missing. A `StoredMessage` wraps the
 `MessageMeta` and a loader for the raw bytes; the loader returns `None` when the bytes
 are gone, so the page answers 404 instead of raising. `MessageMeta.to_json()` and
-`MessageMeta.from_json()` serialise the metadata. See the
-[API reference](api.md#storage).
+`MessageMeta.from_json()` serialise the metadata; `from_json()` reads a record written
+before tags existed as untagged. See the [API reference](api.md#storage).
 
 The system check `django_mail_preview.E002` reports a path that doesn't import or
 doesn't name a concrete `BaseStorage` subclass.

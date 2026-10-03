@@ -8,10 +8,18 @@
         {# The search box needs the script and shows once it has run; the query stays in the URL, so a reload keeps it. #}
         <form class="search" role="search">
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
-          <input type="search" name="q" id="q" value="{{ query }}" placeholder="Search · from: to: subject: has:attachment" aria-label="Search the inbox" title="A word matches the subject and the addresses. from:, to: and subject: narrow it to one field, has:attachment keeps messages with attachments, and a leading - excludes." autocomplete="off" spellcheck="false">
+          <input type="search" name="q" id="q" value="{{ query }}" placeholder="Search · from: to: subject: has:attachment tag:" aria-label="Search the inbox" title="A word matches the subject and the addresses. from:, to: and subject: narrow it to one field, has:attachment keeps messages with attachments, tag: keeps messages with that tag, and a leading - excludes." autocomplete="off" spellcheck="false">
           <button type="button" class="clear" aria-label="Clear the search" title="Clear" hidden><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
         </form>
       </div>
+      {% if tags %}
+        {# Every tag of the listed mail with its count. A click puts tag:<name> into the box, so the row needs the script too. #}
+        <div class="tagbar" role="group" aria-label="Filter by tag">
+          {% for tag, count in tags %}
+            <button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }} <span class="count">{{ count }}</span></button>
+          {% endfor %}
+        </div>
+      {% endif %}
       <table class="inbox">
         <thead>
           <tr>
@@ -25,8 +33,9 @@
         </thead>
         <tbody>
           {% for item in sent %}
-            <tr>
-              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a></td>
+            {# The row carries every tag for the script; the cell shows three and counts the rest, with the names in the tooltip. #}
+            <tr{% if item.meta.tags %} data-tags="{{ item.meta.tags|join:" " }}"{% endif %}>
+              <td><a href="{% url 'mail_preview:sent' id=item.meta.id %}">{{ item.meta.subject|default:"(no subject)" }}</a>{% if item.meta.tags %}<span class="tags">{% for tag in item.meta.tags|slice:":3" %}<button type="button" class="tag" data-tag="{{ tag }}" aria-pressed="false">{{ tag }}</button>{% endfor %}{% if item.meta.tags|length > 3 %}<span class="tag more" data-tags="{{ item.meta.tags|slice:"3:"|join:" " }}" title="{{ item.meta.tags|slice:"3:"|join:", " }}" aria-pressed="false">+{{ item.meta.tags|length|add:"-3" }}</span>{% endif %}</span>{% endif %}</td>
               <td class="from wide">{{ item.meta.from_email }}</td>
               <td class="to">{{ item.meta.to|join:", " }}</td>
               <td class="paperclip">

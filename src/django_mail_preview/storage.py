@@ -75,6 +75,8 @@ class MessageMeta:
     size: int
     """Bytes of the serialised message."""
     attachments: int
+    tags: tuple[str, ...] = ()
+    """Fixed at capture: from the ``X-Tags`` header, the ``MAIL_PREVIEW_TAGS`` function and plus addressing."""
 
     def to_json(self) -> str:
         return json.dumps({**asdict(self), "date": self.date.isoformat()})
@@ -94,6 +96,8 @@ class MessageMeta:
             alias=data["alias"],
             size=data["size"],
             attachments=data["attachments"],
+            # A sidecar written before tags existed has none.
+            tags=tuple(data.get("tags", ())),
         )
 
 

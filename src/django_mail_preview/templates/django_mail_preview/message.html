@@ -8,6 +8,10 @@
   <article class="message">
     <header class="meta">
       <h1>{{ parsed.subject|default:"(no subject)" }}</h1>
+      {% if meta.tags %}
+        {# Each tag opens the inbox filtered by it. #}
+        <p class="tags">{% for tag in meta.tags %}<a class="tag" href="{% url 'mail_preview:index' %}?q=tag:{{ tag|urlencode }}">{{ tag }}</a>{% endfor %}</p>
+      {% endif %}
       <div class="sender">
         <span class="avatar" aria-hidden="true">{{ initial }}</span>
         <div class="who">

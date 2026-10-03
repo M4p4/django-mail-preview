@@ -214,22 +214,28 @@
   // The search box on the start page filters the table as the query is typed,
   // over the rows the page has. A word matches the subject, the sender and
   // the recipients; from:, to: and subject: narrow it to one field;
-  // has:attachment keeps messages with attachments; a leading - excludes.
-  // Terms are matched anywhere in the text, case apart, and every term must
-  // hold. The query is mirrored into the URL, so the reload for new mail
-  // keeps it, and the box keeps its focus across that reload through #search.
+  // has:attachment keeps messages with attachments; tag: keeps messages with
+  // that tag, whole; a leading - excludes. Terms are matched anywhere in the
+  // text, case apart, and every term must hold. The query is mirrored into
+  // the URL, so the reload for new mail keeps it, and the box keeps its focus
+  // across that reload through #search. A tag chip, in the row under the
+  // heading or after a subject, toggles its tag: term in the query and is
+  // pressed while the query holds it.
   const search = document.querySelector(".search");
   const query = search && search.querySelector("input");
   if (search) {
     const clear = search.querySelector(".clear");
     const count = document.querySelector(".start h1 .count");
     const nomatch = document.querySelector(".nomatch");
+    const chips = document.querySelectorAll("button.tag[data-tag]");
+    const more = document.querySelectorAll(".inbox .tag.more[data-tags]");
     const rows = [...document.querySelectorAll(".inbox tbody tr")].map((row) => ({
       row,
-      subject: row.querySelector("td").textContent.toLowerCase(),
+      subject: row.querySelector("td a").textContent.toLowerCase(),
       from: row.querySelector("td.from").textContent.toLowerCase(),
       to: row.querySelector("td.to").textContent.toLowerCase(),
       attachment: Boolean(row.querySelector(".clip")),
+      tags: (row.dataset.tags || "").split(" ").filter(Boolean),
     }));
     const parse = (text) =>
       text
@@ -238,12 +244,13 @@
         .flatMap((word) => {
           const not = word.startsWith("-");
           const term = not ? word.slice(1) : word;
-          const match = /^(from|to|subject|has):(.*)$/.exec(term);
+          const match = /^(from|to|subject|has|tag):(.*)$/.exec(term);
           const value = match ? match[2] : term;
           return value ? [{ not, field: match && match[1], value }] : [];
         });
     const holds = (item, { field, value }) => {
       if (field === "has") return value === "attachment" && item.attachment;
+      if (field === "tag") return item.tags.includes(value);
       if (field) return item[field].includes(value);
       return item.subject.includes(value) || item.from.includes(value) || item.to.includes(value);
     };
@@ -258,6 +265,12 @@
       count.textContent = terms.length ? `${shown} of ${rows.length}` : String(rows.length);
       nomatch.hidden = shown > 0;
       clear.hidden = !query.value;
+      const held = (tag) => terms.some((t) => t.field === "tag" && !t.not && t.value === tag);
+      chips.forEach((chip) => chip.setAttribute("aria-pressed", String(held(chip.dataset.tag))));
+      // A "+N" chip is pressed when one of the tags it stands for is in the query.
+      more.forEach((chip) => {
+        chip.setAttribute("aria-pressed", String(chip.dataset.tags.split(" ").some(held)));
+      });
       const url = new URL(location.href);
       if (query.value.trim()) url.searchParams.set("q", query.value.trim());
       else url.searchParams.delete("q");
@@ -275,6 +288,16 @@
       apply();
       query.focus();
     });
+    // A chip adds its tag: term to the query, or takes it out again, and
+    // leaves the rest of the query alone.
+    const toggle = (name) => {
+      const words = query.value.split(/\s+/).filter(Boolean);
+      const term = `tag:${name}`;
+      const rest = words.filter((word) => word.toLowerCase() !== term);
+      query.value = (rest.length < words.length ? rest : [...words, term]).join(" ");
+      apply();
+    };
+    chips.forEach((chip) => chip.addEventListener("click", () => toggle(chip.dataset.tag)));
     search.addEventListener("submit", (event) => event.preventDefault());
     apply();
     if (location.hash === "#search") {

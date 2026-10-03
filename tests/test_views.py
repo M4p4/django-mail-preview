@@ -81,6 +81,17 @@ def plain(subject="Hello"):
     return EmailMessage(subject, "Hi there.", "sender@example.com", ["to@example.com"])
 
 
+def tagged(subject, *tags):
+    """A plain message with an ``X-Tags`` header."""
+    return EmailMessage(
+        subject,
+        "Hi there.",
+        "sender@example.com",
+        ["to@example.com"],
+        headers={"X-Tags": ", ".join(tags)},
+    )
+
+
 def html(subject="Welcome"):
     """An HTML message with an inline image, an SVG attachment and every address header."""
     message = EmailMultiAlternatives(
@@ -185,7 +196,7 @@ def test_index_has_the_search_box_with_its_operators(client):
     assert '<form class="search" role="search">' in content
     assert (
         '<input type="search" name="q" id="q" value="" '
-        'placeholder="Search · from: to: subject: has:attachment"' in content
+        'placeholder="Search · from: to: subject: has:attachment tag:"' in content
     )
     assert '<button type="button" class="clear"' in content
     assert '<p class="nomatch" hidden>No messages match.</p>' in content
@@ -197,6 +208,97 @@ def test_index_prefills_the_search_box_from_the_url(client):
     content = client.get(route("index"), {"q": 'from:"a" <b>'}).content.decode()
 
     assert 'value="from:&quot;a&quot; &lt;b&gt;"' in content
+
+
+def test_index_lists_the_tags_with_their_counts(client):
+    capture(plain("Untagged"))
+    receipt = capture(tagged("Receipt", "billing"))
+    welcome = capture(tagged("Welcome", "onboarding", "Billing"))
+
+    content = client.get(route("index")).content.decode()
+
+    chip = '<button type="button" class="tag" data-tag="{0}" aria-pressed="false">{0}</button>'
+    [bar] = re.findall(
+        r'<div class="tagbar" role="group" aria-label="Filter by tag">(.*?)</div>',
+        content,
+        re.S,
+    )
+    assert re.findall(r'data-tag="(\w+)"[^>]*>\w+ <span class="count">(\d+)', bar) == [
+        ("billing", "2"),
+        ("onboarding", "1"),
+    ]
+    # Under the subject in the table, sorted; the row carries them for the script.
+    cells = re.findall(r"<tr[^>]*>\s*<td>(.*?)</td>", content, re.S)
+    assert cells[0] == (
+        f'<a href="{route("sent", id=welcome)}">Welcome</a><span class="tags">'
+        f"{chip.format('billing')}{chip.format('onboarding')}</span>"
+    )
+    assert cells[1] == (
+        f'<a href="{route("sent", id=receipt)}">Receipt</a>'
+        f'<span class="tags">{chip.format("billing")}</span>'
+    )
+    assert 'class="tag"' not in cells[2]
+    body = content.split("<tbody>")[1]
+    assert re.findall(r"<tr( data-tags=\"[^\"]*\")?>", body) == [
+        ' data-tags="billing onboarding"',
+        ' data-tags="billing"',
+        "",
+    ]
+    # Plain spans on the sidebar rows.
+    assert (
+        '<span class="tags"><span class="tag">billing</span>'
+        '<span class="tag">onboarding</span></span>' in content
+    )
+    assert content.count('<span class="tags"><span class="tag">') == 2
+
+
+def test_sidebar_row_shows_two_tags_and_counts_the_rest(client):
+    capture(tagged("Statement", "renewal", "billing", "finance", "quarterly", "vip"))
+
+    content = client.get(route("index")).content.decode()
+
+    assert (
+        '<span class="tags"><span class="tag">billing</span><span class="tag">finance</span>'
+        '<span class="tag more" title="quarterly, renewal, vip">+3</span></span>'
+        in content
+    )
+    # The table row shows three and counts the rest, but carries all five.
+    assert (
+        '<span class="tag more" data-tags="renewal vip" title="renewal, vip" '
+        'aria-pressed="false">+2</span></span></td>' in content
+    )
+    assert content.count('<button type="button" class="tag"') == 5 + 3
+    assert 'data-tags="billing finance quarterly renewal vip"' in content
+
+
+def test_index_without_tags_has_no_tag_row(client):
+    capture(plain())
+
+    content = client.get(route("index")).content.decode()
+
+    assert 'class="tagbar"' not in content
+    assert 'class="tag"' not in content
+    assert 'class="tags"' not in content
+
+
+def test_index_escapes_a_tag_with_markup(client):
+    capture(tagged("Hi", "<b>"))
+
+    content = client.get(route("index")).content.decode()
+
+    assert 'data-tag="&lt;b&gt;" aria-pressed="false">&lt;b&gt;' in content
+    assert "<b>" not in content
+
+
+def test_message_page_links_each_tag_to_the_filtered_inbox(client):
+    id = capture(tagged("Receipt", "billing", "q&a"))
+
+    content = client.get(route("sent", id=id)).content.decode()
+
+    assert (
+        f'<p class="tags"><a class="tag" href="{route("index")}?q=tag:billing">billing</a>'
+        f'<a class="tag" href="{route("index")}?q=tag:q%26a">q&amp;a</a></p>' in content
+    )
 
 
 def test_index_escapes_a_subject_with_markup(client):

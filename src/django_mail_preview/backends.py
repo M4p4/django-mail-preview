@@ -12,6 +12,7 @@ from django.core.mail import EmailMessage
 from django.core.mail.backends.base import BaseEmailBackend
 
 from django_mail_preview.storage import MessageMeta, get_storage, new_id
+from django_mail_preview.tags import tags_for
 
 __all__ = ["EmailBackend", "serialise"]
 
@@ -48,6 +49,7 @@ class EmailBackend(BaseEmailBackend):
                 alias=getattr(self, "alias", None),
                 size=len(raw),
                 attachments=len(message.attachments),
+                tags=tags_for(message),
             )
             storage.add(raw, meta)
             count += 1

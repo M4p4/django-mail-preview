@@ -60,5 +60,18 @@ class MailPreviewSettings:
         """
         return _get("ALLOW", None)
 
+    @property
+    def TAGS(self) -> str | None:
+        """Dotted path of a ``callable(message) -> Iterable[str]`` that tags a message at capture.
+
+        ``None`` leaves the ``X-Tags`` header as the source.
+        """
+        return _get("TAGS", None)
+
+    @property
+    def PLUS_ADDRESSING(self) -> bool:
+        """Whether the part after ``+`` in a recipient's address becomes a tag."""
+        return _get("PLUS_ADDRESSING", False)
+
 
 mail_preview_settings = MailPreviewSettings()

@@ -41,6 +41,10 @@ def allow_all(request):
     """A callable at a dotted path; the check only imports it."""
 
 
+def tag_all(message):
+    """A callable at a dotted path; the check only imports it."""
+
+
 def test_no_messages_by_default():
     result = run_checks()
 
@@ -161,6 +165,50 @@ def test_root_invalid(root):
 
     assert [message.id for message in result] == ["django_mail_preview.E004"]
     assert isinstance(result[0], Error)
+
+
+@pytest.mark.parametrize("tags", [None, "tests.test_checks.tag_all"])
+def test_tags_valid(tags):
+    with override_settings(MAIL_PREVIEW_TAGS=tags):
+        result = run_checks()
+
+    assert result == []
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        "tests.test_checks.missing",
+        "missing.module.tags",
+        "tags",
+        "tests.test_checks.NOT_CALLABLE",
+        tag_all,
+    ],
+)
+def test_tags_invalid(tags):
+    with override_settings(MAIL_PREVIEW_TAGS=tags):
+        result = run_checks()
+
+    assert [message.id for message in result] == ["django_mail_preview.E005"]
+    assert isinstance(result[0], Error)
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_plus_addressing_valid(value):
+    with override_settings(MAIL_PREVIEW_PLUS_ADDRESSING=value):
+        result = run_checks()
+
+    assert result == []
+
+
+@pytest.mark.parametrize("value", [1, 0, "yes", None])
+def test_plus_addressing_invalid(value):
+    with override_settings(MAIL_PREVIEW_PLUS_ADDRESSING=value):
+        result = run_checks()
+
+    assert [message.id for message in result] == ["django_mail_preview.E006"]
+    assert isinstance(result[0], Error)
+    assert repr(value) in result[0].msg
 
 
 @pytest.mark.parametrize("config", ACTIVE)
