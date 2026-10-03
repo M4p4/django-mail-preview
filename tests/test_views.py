@@ -157,8 +157,8 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert "Sent · 2" in content  # The sidebar.
-    assert '<h1>Sent <span class="count">2</span></h1>' in content
+    # Once in the sidebar heading, once in the page heading.
+    assert content.count('Inbox <span class="count">2</span>') == 2
     assert content.index(route("sent", id=second)) < content.index(
         route("sent", id=first)
     )
