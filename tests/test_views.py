@@ -186,12 +186,14 @@ def test_index_escapes_a_subject_with_markup(client):
     assert "<b>Bold</b>" not in content
 
 
-def test_index_without_mail_shows_the_hint_instead_of_the_table(client):
+def test_index_without_mail_shows_the_empty_inbox_instead_of_the_table(client):
     content = client.get(route("index")).content.decode()
 
     assert "<table" not in content
-    assert "<h1>Mail preview</h1>" in content
-    assert "Nothing captured yet." in content
+    assert "<h1>Your inbox is empty</h1>" in content
+    assert '<button type="button" class="copy">' in content
+    # The storage lives in the heading's tooltip only.
+    assert "Captured mail is stored in" not in content
 
 
 def test_sidebar_shows_the_time_for_today_and_the_date_for_older_mail(client):
@@ -230,34 +232,37 @@ def test_top_bar_button_controls_the_sidebar(client):
 
 
 def test_index_hints_at_the_backend_until_it_is_active(settings, client):
-    before = client.get(route("index"))
+    """The one command on the empty page: the setting first, then a message to send."""
+    setting = "MAILERS = {" if django.VERSION >= (6, 1) else 'EMAIL_BACKEND = "'
+    command = 'python manage.py shell -c "from django.core.mail import send_mail;'
+
+    before = client.get(route("index")).content.decode()
     settings.MAILERS = {"default": {"BACKEND": BACKEND}}
-    after = client.get(route("index"))
+    after = client.get(route("index")).content.decode()
 
-    assert BACKEND in before.content.decode()
-    assert BACKEND not in after.content.decode()
+    assert setting in before and BACKEND in before
+    assert command not in before
+    assert command in after
+    assert BACKEND not in after
 
 
-def test_empty_inbox_names_a_custom_storage(settings, client):
+def test_inbox_heading_names_a_custom_storage(settings, client):
     settings.MAIL_PREVIEW_STORAGE = "tests.test_storage.MemoryStorage"
 
     content = client.get(route("index")).content.decode()
 
     assert '<h2 title="Stored by tests.test_storage.MemoryStorage">' in content
-    assert (
-        "Captured mail is kept by <code>tests.test_storage.MemoryStorage</code>."
-        in content
-    )
+    assert "tests.test_storage.MemoryStorage</code>" not in content
 
 
-def test_empty_inbox_names_its_directory(client):
-    """The hint says where the mail will be, in full, so a worker in another container can be pointed there."""
+def test_inbox_heading_names_its_directory(client):
+    """The tooltip carries the whole path, so a worker in another container can be pointed there."""
     root = FileStorage().root
 
     content = client.get(route("index")).content.decode()
 
     assert f'<h2 title="Stored in {root}">' in content
-    assert f"Captured mail is stored in <code>{root}</code>." in content
+    assert f"<code>{root}</code>" not in content
 
 
 def test_message_page(client):
@@ -801,9 +806,10 @@ def test_index_explains_how_to_add_previews_until_there_are_some(
     preview_registry.clear()
     without = client.get(route("index"))
 
-    assert "class AccountEmails(EmailPreview):" not in with_previews.content.decode()
-    assert "class AccountEmails(EmailPreview):" in without.content.decode()
-    assert "then refresh this page." in without.content.decode()
+    guide = 'href="https://django-mail-preview.readthedocs.io/en/stable/previews.html"'
+    assert guide not in with_previews.content.decode()
+    assert guide in without.content.decode()
+    assert "No previews yet? <a" in without.content.decode()
 
 
 @kinds

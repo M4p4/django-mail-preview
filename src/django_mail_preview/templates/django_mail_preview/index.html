@@ -33,48 +33,29 @@
         </tbody>
       </table>
     {% else %}
-      <h1>Mail preview</h1>
-    {% endif %}
-    {% if not previews %}
-      <div class="hint">
-        <h2>No previews yet</h2>
-        <p>Create <code>previews.py</code> in one of your apps:</p>
-        <pre><code># accounts/previews.py
-from django_mail_preview import EmailPreview
-
-from .emails import password_reset_email, welcome_email
-from .models import User
-
-
-class AccountEmails(EmailPreview):
-    def password_reset(self):
-        """Sent after the "forgot password" form."""
-        user = User(first_name="Ada", email="ada@example.com")
-        return password_reset_email(user)
-
-    def welcome(self):
-        return welcome_email(User(first_name="Ada"))</code></pre>
-        <p>then refresh this page.</p>
-      </div>
-    {% endif %}
-    {% if not sent %}
-      <div class="hint">
-        <h2>Nothing captured yet</h2>
+      {# The empty inbox: one glyph, one sentence, the one command that changes it. #}
+      <div class="welcome">
+        <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+        <h1>Your inbox is empty</h1>
         {% if backend_active %}
-          <p>Send an email and it appears here.</p>
+          <p>Send a message from your project and it appears here.</p>
+          <div class="copyable">
+            <button type="button" class="copy"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span></button>
+            <pre><code>python manage.py shell -c "from django.core.mail import send_mail; send_mail('Hello', 'It works.', 'me@example.com', ['you@example.com'])"</code></pre>
+          </div>
         {% else %}
-          <p>Set <code>MAILERS</code> (Django 6.1 and later) or <code>EMAIL_BACKEND</code> to <code>django_mail_preview.backends.EmailBackend</code> and send an email.</p>
-          <pre><code># settings.py
-
-# Django 6.1 and later
-MAILERS = {
+          <p>Point your project at the capture backend and every message it sends appears here.</p>
+          <div class="copyable">
+            <button type="button" class="copy"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span></button>
+            <pre><code># settings.py
+{% if mailers %}MAILERS = {
     "default": {"BACKEND": "django_mail_preview.backends.EmailBackend"},
-}
-
-# Django 5.2 and 6.0
-EMAIL_BACKEND = "django_mail_preview.backends.EmailBackend"</code></pre>
+}{% else %}EMAIL_BACKEND = "django_mail_preview.backends.EmailBackend"{% endif %}</code></pre>
+          </div>
         {% endif %}
-        <p>{% if storage_path %}Captured mail is stored in <code>{{ storage_path }}</code>.{% else %}Captured mail is kept by <code>{{ storage_class }}</code>.{% endif %}</p>
+        {% if not previews %}
+          <p class="also">No previews yet? <a href="https://django-mail-preview.readthedocs.io/en/stable/previews.html">Add a <code>previews.py</code></a> to render your templates with sample data.</p>
+        {% endif %}
       </div>
     {% endif %}
   </section>
