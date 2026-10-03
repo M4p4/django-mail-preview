@@ -537,9 +537,8 @@ button:hover {
 }
 
 .inbox th {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .inbox tbody tr:hover {
