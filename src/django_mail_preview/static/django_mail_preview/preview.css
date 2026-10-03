@@ -559,7 +559,14 @@ button:hover {
   font-weight: 600;
 }
 
-/* Start page: the inbox table, and the hints */
+/* Start page: the inbox table, where its files live, and the hints */
+
+.storage {
+  margin-top: var(--space-3);
+  font-size: 0.85em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 
 .pane .count {
   margin-left: 0.3rem;

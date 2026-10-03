@@ -32,6 +32,7 @@
           {% endfor %}
         </tbody>
       </table>
+      <p class="storage">{% if storage_path %}Stored in <code>{{ storage_path }}</code>{% else %}Kept by <code>{{ storage_class }}</code>{% endif %}</p>
     {% else %}
       <h1>Mail preview</h1>
     {% endif %}

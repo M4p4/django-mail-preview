@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The sidebar's storage footer is gone. The start page names the directory, or the storage class, while the inbox is empty, and the Inbox heading shows it in a tooltip.
+- The sidebar's storage footer is gone. The start page names the directory, or the storage class, under the inbox table and while the inbox is empty, and the Inbox heading shows it in a tooltip.
 - The version number no longer appears beside the name in the sidebar and the top bar.
 
 ## 0.1.0 (2026-10-03)

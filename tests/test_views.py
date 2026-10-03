@@ -172,8 +172,11 @@ def test_index_lists_captured_mail_as_a_table_newest_first(client):
     assert '<span class="clip"' not in rows[1]
     assert "Nothing captured yet." not in content
     assert 'name="csrfmiddlewaretoken"' in content
-    # Where the mail lives is a tooltip on the heading, not a line of its own.
+    # Where the mail lives: a tooltip on the sidebar heading and a line under the table.
     assert f'<h2 title="Stored in {FileStorage().root}">' in content
+    assert (
+        f'<p class="storage">Stored in <code>{FileStorage().root}</code></p>' in content
+    )
     assert "<footer" not in content
 
 
@@ -246,6 +249,18 @@ def test_empty_inbox_names_a_custom_storage(settings, client):
     assert '<h2 title="Stored by tests.test_storage.MemoryStorage">' in content
     assert (
         "Captured mail is kept by <code>tests.test_storage.MemoryStorage</code>."
+        in content
+    )
+    # With mail in it, the line under the table names the class too.
+    from tests.test_storage import MemoryStorage
+
+    EmailBackend().send_messages([plain("One")])
+    try:
+        content = client.get(route("index")).content.decode()
+    finally:
+        MemoryStorage().clear()
+    assert (
+        '<p class="storage">Kept by <code>tests.test_storage.MemoryStorage</code></p>'
         in content
     )
 
