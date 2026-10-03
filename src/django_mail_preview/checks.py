@@ -20,11 +20,14 @@ from django_mail_preview.storage import storage_class
 __all__ = [
     "BACKEND",
     "backend_is_active",
+    "callable_problem",
     "check_allow",
     "check_backend_without_debug",
     "check_max_messages",
+    "check_plus_addressing",
     "check_root",
     "check_storage",
+    "check_tags",
     "check_unknown_settings",
     "check_urls",
 ]
@@ -51,28 +54,62 @@ def backend_is_active() -> bool:
     return backend == BACKEND
 
 
+def callable_problem(path: object) -> str | None:
+    """Why ``path`` isn't the dotted path of a callable, or ``None`` when it is."""
+    if not isinstance(path, str):
+        return f"{path!r} is not a dotted path."
+    try:
+        target = import_string(path)
+    except ImportError as error:
+        return str(error)
+    if callable(target):
+        return None
+    return f"{path!r} is not callable."
+
+
 def check_allow(
     app_configs: Sequence[AppConfig] | None, **kwargs: Any
 ) -> list[CheckMessage]:
     path: object = mail_preview_settings.ALLOW
-    if path is None:
+    problem = None if path is None else callable_problem(path)
+    if problem is None:
         return []
-    if not isinstance(path, str):
-        problem = f"{path!r} is not a dotted path."
-    else:
-        try:
-            allow = import_string(path)
-        except ImportError as error:
-            problem = str(error)
-        else:
-            if callable(allow):
-                return []
-            problem = f"{path!r} is not callable."
     return [
         Error(
             f"MAIL_PREVIEW_ALLOW can't be used: {problem}",
             hint="Set it to the dotted path of a function that takes the request and returns a bool, or remove it to open the pages only while DEBUG is True.",
             id="django_mail_preview.E001",
+        )
+    ]
+
+
+def check_tags(
+    app_configs: Sequence[AppConfig] | None, **kwargs: Any
+) -> list[CheckMessage]:
+    path: object = mail_preview_settings.TAGS
+    problem = None if path is None else callable_problem(path)
+    if problem is None:
+        return []
+    return [
+        Error(
+            f"MAIL_PREVIEW_TAGS can't be used: {problem}",
+            hint="Set it to the dotted path of a function that takes the message and returns its tags, or remove it to tag mail from the X-Tags header only.",
+            id="django_mail_preview.E005",
+        )
+    ]
+
+
+def check_plus_addressing(
+    app_configs: Sequence[AppConfig] | None, **kwargs: Any
+) -> list[CheckMessage]:
+    value: object = mail_preview_settings.PLUS_ADDRESSING
+    if isinstance(value, bool):
+        return []
+    return [
+        Error(
+            f"MAIL_PREVIEW_PLUS_ADDRESSING must be True or False, not {value!r}.",
+            hint="Set it to True to tag a message with the part after + in a recipient's address, or remove it.",
+            id="django_mail_preview.E006",
         )
     ]
 

@@ -16,6 +16,8 @@ DEFAULTS = [
     ("STORAGE", "files"),
     ("MAX_MESSAGES", 100),
     ("ALLOW", None),
+    ("TAGS", None),
+    ("PLUS_ADDRESSING", False),
 ]
 
 OVERRIDES = [
@@ -23,6 +25,8 @@ OVERRIDES = [
     ("ROOT", "/var/tmp/mail-preview"),
     ("MAX_MESSAGES", 10),
     ("ALLOW", "myproject.utils.mail_preview_allowed"),
+    ("TAGS", "myproject.mail.tags"),
+    ("PLUS_ADDRESSING", True),
 ]
 
 TEMP_ROOT = Path(tempfile.gettempdir()) / "django-mail-preview"

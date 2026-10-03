@@ -620,7 +620,8 @@ html:not(.js) .theme {
 }
 
 /* The heading and the search box share a row; the box needs the script and
-   shows once it has run. Under 48 rem it takes a line of its own. */
+   shows once it has run, wide enough for its placeholder to name every
+   operator. Under 48 rem it takes a line of its own. */
 
 .inbox-head {
   display: flex;
@@ -638,7 +639,7 @@ html:not(.js) .theme {
 .search {
   display: none;
   position: relative;
-  flex: 0 1 26rem;
+  flex: 0 1 30rem;
   align-items: center;
 }
 
@@ -689,6 +690,91 @@ html:not(.js) .theme {
 .nomatch {
   margin: var(--space-4) 0;
   color: var(--muted);
+}
+
+/* Tags: small pills after a subject. In the table and in the row under the
+   heading they are buttons that put tag:<name> into the search box, pressed
+   while the query holds it; on the sidebar rows they are plain, and on a
+   message page they link to the inbox filtered by the tag. */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.6;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: 0.15em;
+}
+
+button.tag:hover,
+a.tag:hover {
+  border-color: var(--muted);
+  color: var(--fg);
+}
+
+.tag[aria-pressed="true"] {
+  background: var(--selected);
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.tag .count {
+  margin-left: 0;
+  font-size: 0.9em;
+  font-weight: 400;
+}
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* The row of every tag with its count, under the heading row. It needs the
+   script, like the box, and shows once it has run. */
+
+.tagbar {
+  display: none;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.js .tagbar {
+  display: flex;
+}
+
+.inbox td:first-child .tag {
+  margin-left: 0.35rem;
+}
+
+/* On a sidebar row the chips share the line with the recipients and give way
+   to the paperclip and the time. */
+
+.sidebar .tags {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar .tag {
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.meta .tags {
+  display: flex;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
 }
 
 @media (max-width: 48rem) {

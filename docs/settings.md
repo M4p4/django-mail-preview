@@ -52,6 +52,25 @@ def mail_preview_allowed(request):
 Every view calls it, the frame and the downloads included. See
 [Security](security.md).
 
+## `MAIL_PREVIEW_TAGS`
+
+Default: `None`
+
+Dotted path of a function that takes the `EmailMessage` being captured and returns
+its tags, as a list of strings. They're merged with the tags from the message's
+`X-Tags` header. See [Tagging mail](inbox.md#tagging-mail).
+
+```python
+MAIL_PREVIEW_TAGS = "myproject.mail.tags"
+```
+
+## `MAIL_PREVIEW_PLUS_ADDRESSING`
+
+Default: `False`
+
+Whether the part after `+` in a recipient's address becomes a tag, so a message to
+`ada+welcome@example.com` is tagged `welcome`.
+
 ## System checks
 
 | ID | Reports |
@@ -60,6 +79,8 @@ Every view calls it, the frame and the downloads included. See
 | `django_mail_preview.E002` | a `MAIL_PREVIEW_STORAGE` that isn't `"files"` or the path of an importable, concrete `BaseStorage` subclass |
 | `django_mail_preview.E003` | a `MAIL_PREVIEW_MAX_MESSAGES` that isn't an integer of 1 or more |
 | `django_mail_preview.E004` | a `MAIL_PREVIEW_ROOT` that isn't a `str` or `os.PathLike` |
+| `django_mail_preview.E005` | a `MAIL_PREVIEW_TAGS` that can't be imported or isn't callable |
+| `django_mail_preview.E006` | a `MAIL_PREVIEW_PLUS_ADDRESSING` that isn't `True` or `False` |
 | `django_mail_preview.W001` | the capture backend active while `DEBUG` is `False`, so mail is captured, not delivered |
 | `django_mail_preview.W002` | a `MAIL_PREVIEW_*` setting django-mail-preview doesn't know, usually a typo, with the closest name as a hint |
 | `django_mail_preview.W003` | the capture backend active without the URLs included, so captured mail can't be seen |

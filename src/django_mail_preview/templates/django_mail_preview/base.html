@@ -63,6 +63,9 @@
                     </span>
                     <span class="line">
                       <span class="to">{{ item.meta.to|join:", " }}</span>
+                      {% if item.meta.tags %}
+                        <span class="tags">{% for tag in item.meta.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</span>
+                      {% endif %}
                       {% if item.meta.attachments %}
                         <span class="clip" title="{{ item.meta.attachments }} attachment{{ item.meta.attachments|pluralize }}">{% include "django_mail_preview/_clip.html" %}{{ item.meta.attachments }}</span>
                       {% endif %}

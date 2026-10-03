@@ -88,6 +88,7 @@ def test_send_mail_through_the_configured_route(route):
     assert message.meta.subject == "Hello"
     assert message.meta.to == ("to@example.com",)
     assert message.meta.alias == ("default" if MAILERS else None)
+    assert message.meta.tags == ()
 
 
 def test_metadata():
@@ -96,6 +97,7 @@ def test_metadata():
         cc=["cc@example.com"],
         bcc=["bcc@example.com"],
         reply_to=["reply@example.com"],
+        headers={"X-Tags": "Onboarding, billing"},
     )
     message.attach("report.pdf", PDF, "application/pdf")
     message.attach("notes.txt", "Some notes.", "text/plain")
@@ -117,6 +119,7 @@ def test_metadata():
     assert meta.alias is None
     assert meta.size == len(captured.raw)
     assert meta.attachments == 2
+    assert meta.tags == ("billing", "onboarding")
     assert b"bcc@example.com" not in captured.raw
 
 
