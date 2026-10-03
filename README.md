@@ -15,7 +15,7 @@ classes build emails from sample data without sending them. The page answers 404
 unless `DEBUG` is on, needs no `staticfiles`, and adds no models or migrations. Django
 is the only dependency.
 
-![A captured message rendered in a sandboxed frame at 600 px wide, with the previews grouped by app in the sidebar](https://raw.githubusercontent.com/M4p4/django-mail-preview/main/docs/_static/inbox.png)
+![A captured message rendered in a sandboxed frame at 600 px wide, with the previews grouped by app and the inbox in the sidebar, in the dark colour scheme](https://raw.githubusercontent.com/M4p4/django-mail-preview/main/docs/_static/inbox.png)
 
 ## Quickstart
 
