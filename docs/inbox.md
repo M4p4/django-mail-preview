@@ -23,7 +23,9 @@ The sidebar lists the previews grouped by app, then the captured messages newest
 first under "Inbox" with their count. The start page shows the captured mail as a
 table with the subject, sender, recipients, an attachment count, the size and how long
 ago the message arrived, "just now", "4 minutes ago", "2 days ago", with the exact
-time in a tooltip. While nothing is captured it shows the one command that changes that: the
+time in a tooltip. A long subject is cut short, with the whole of it in its tooltip,
+and the sender shows by name when the header has one, with the address in the
+tooltip. While nothing is captured it shows the one command that changes that: the
 setting that points the project at the capture backend, or, once that is active, a
 `manage.py shell` one-liner that sends a message. A project without previews gets a
 link to the [previews guide](previews.md). On a phone the sidebar sits behind a Menu
